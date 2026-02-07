@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sportinabox — Admin</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --muted2:rgba(255,255,255,.45);
+      --accent:#9EE7FF;
+      --good:#4ade80;
+      --bad:#fb7185;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --radius: 22px;
+      --radius2: 16px;
+      --blur: 18px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(158,231,255,.12), transparent 55%),
+        radial-gradient(900px 600px at 85% 20%, rgba(167,139,250,.10), transparent 55%),
+        radial-gradient(900px 600px at 55% 95%, rgba(34,197,94,.08), transparent 60%),
+        var(--bg);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+    .shell{
+      width:min(1100px, 100%);
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:18px;
+    }
+    @media (max-width: 980px){
+      .shell{grid-template-columns:1fr}
+    }
+    .card{
+      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.04));
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      overflow:hidden;
+    }
+    .pane{
+      padding:22px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .dot{
+      width:12px;height:12px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.2) 40%, rgba(255,255,255,.0) 70%),
+                  linear-gradient(135deg, rgba(158,231,255,.9), rgba(167,139,250,.8));
+      box-shadow: 0 0 0 4px rgba(158,231,255,.08);
+    }
+    h1{
+      font-size:18px;
+      letter-spacing:.2px;
+      margin:0;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:6px;
+      line-height:1.35;
+    }
+    .row{display:flex;gap:10px;align-items:center}
+    .field{
+      margin-top:14px;
+    }
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+    input, textarea, select{
+      width:100%;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:12px 12px;
+      outline:none;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    textarea{min-height:90px; resize: vertical;}
+    input:focus, textarea:focus, select:focus{
+      border-color: rgba(158,231,255,.55);
+      background: rgba(255,255,255,.08);
+      transform: translateY(-1px);
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      border-radius: 999px;
+      padding: 12px 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color:var(--text);
+      cursor:pointer;
+      transition: transform .14s ease, background .14s ease, border-color .14s ease;
+      user-select:none;
+      font-weight:600;
+      letter-spacing:.15px;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.11);
+      border-color: rgba(255,255,255,.2);
+    }
+    .btn:active{transform: translateY(0px) scale(.99);}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(158,231,255,.95), rgba(167,139,250,.85));
+      color:#061018;
+      border-color: rgba(158,231,255,.5);
+    }
+    .btn.primary:hover{filter: brightness(1.02);}
+    .btn.ghost{
+      background: transparent;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+    }
+    .ok{color:var(--good)}
+    .bad{color:var(--bad)}
+    .sep{
+      height:1px;
+      background: rgba(255,255,255,.10);
+      margin:18px 0;
+    }
+
+    /* Right side */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:16px 18px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .title{
+      display:flex; gap:10px; align-items:baseline;
+    }
+    .title h2{margin:0;font-size:15px}
+    .title span{font-size:12px;color:var(--muted2)}
+    .grid{
+      padding:18px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+    .tile{
+      border-radius: var(--radius2);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      padding:14px;
+      transition: transform .14s ease, background .14s ease, border-color .14s ease;
+    }
+    .tile:hover{
+      transform: translateY(-2px);
+      background: rgba(255,255,255,.07);
+      border-color: rgba(158,231,255,.28);
+    }
+    .tile h3{margin:0 0 6px;font-size:14px}
+    .tile p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.4}
+    .table{
+      padding:0 18px 18px;
+    }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius: var(--radius2);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+    }
+    th, td{
+      font-size:12.5px;
+      padding:12px 10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      color:var(--text);
+      text-align:left;
+      vertical-align:top;
+    }
+    th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.03)}
+    tr:last-child td{border-bottom:none}
+    .actions{display:flex; gap:8px; justify-content:flex-end}
+    .mini{
+      padding:8px 10px;
+      font-size:12px;
+      border-radius: 999px;
+    }
+    .tag{
+      display:inline-flex;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+      font-size:11px;
+      gap:6px;
+      align-items:center;
+    }
+    .tag.published{border-color: rgba(74,222,128,.35); color: rgba(74,222,128,.95); background: rgba(74,222,128,.08)}
+    .tag.draft{border-color: rgba(250,204,21,.25); color: rgba(250,204,21,.95); background: rgba(250,204,21,.08)}
+    .hint{
+      font-size:12px;color:var(--muted2);margin-top:10px;line-height:1.4
+    }
+    .hidden{display:none !important;}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <!-- LEFT: Auth -->
+    <section class="card">
+      <div class="pane">
+        <div class="brand">
+          <div class="dot"></div>
+          <div>
+            <h1>Sportinabox Admin</h1>
+            <div class="sub">Beheer producten, prijzen, specs en status. Apple-achtige flow, zonder rommel.</div>
+          </div>
+        </div>
+
+        <div id="authState" class="pill">
+          <span id="authDot">●</span>
+          <span id="authText">Niet ingelogd</span>
+        </div>
+
+        <div class="sep"></div>
+
+        <div id="loginBox">
+          <div class="field">
+            <label>Email</label>
+            <input id="email" type="email" placeholder="jij@bedrijf.nl" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label>Wachtwoord</label>
+            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+          </div>
+
+          <div class="field row" style="justify-content:space-between;margin-top:16px;">
+            <button class="btn primary" id="btnLogin">Inloggen</button>
+            <button class="btn ghost" id="btnClear">Reset</button>
+          </div>
+
+          <div class="hint">Tip: als login faalt, check of je admin user exact met dezelfde email in D1 staat.</div>
+        </div>
+
+        <div id="loggedBox" class="hidden">
+          <div class="sub">Ingelogd als</div>
+          <div id="whoami" style="margin-top:6px;font-weight:700;"></div>
+
+          <div class="field row" style="margin-top:16px;">
+            <button class="btn" id="btnRefresh">Refresh</button>
+            <button class="btn" id="btnLogout">Uitloggen</button>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="sub">Nieuw product</div>
+          <div class="field">
+            <label>Slug (url-vriendelijk)</label>
+            <input id="p_slug" placeholder="sport-in-a-box-basic" class="mono" />
+          </div>
+          <div class="field">
+            <label>Naam</label>
+            <input id="p_name" placeholder="Sport in a Box — Basic" />
+          </div>
+          <div class="field">
+            <label>Prijs (centen)</label>
+            <input id="p_price" placeholder="2999" class="mono" />
+          </div>
+          <div class="field">
+            <label>Categorie</label>
+            <input id="p_category" placeholder="hygiene" class="mono" />
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select id="p_status">
+              <option value="draft">draft</option>
+              <option value="published">published</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Beschrijving</label>
+            <textarea id="p_desc" placeholder="Korte, strakke omschrijving."></textarea>
+          </div>
+          <div class="field">
+            <label>Specs (JSON)</label>
+            <textarea id="p_specs" class="mono" placeholder='{"maat":"M","kleur":"zwart"}'></textarea>
+          </div>
+          <div class="field">
+            <label>Images (JSON array)</label>
+            <textarea id="p_images" class="mono" placeholder='["/assets/img/voorbeeld.jpg"]'></textarea>
+          </div>
+
+          <div class="field row" style="justify-content:space-between;">
+            <button class="btn primary" id="btnCreate">Product toevoegen</button>
+            <span id="msg" class="sub"></span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT: Dashboard -->
+    <section class="card">
+      <div class="topbar">
+        <div class="title">
+          <h2>Producten</h2>
+          <span id="count">—</span>
+        </div>
+        <div class="row">
+          <span class="pill">API: <span id="apiState" class="ok">●</span> <span id="apiText">—</span></span>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="tile">
+          <h3>Workflow</h3>
+          <p>Draft → Published. Public webshop leest alleen published producten via <span class="mono">/products</span>.</p>
+        </div>
+        <div class="tile">
+          <h3>UI-principe</h3>
+          <p>Rustig, premium, weinig ruis. Subtiele hovers en snelle acties. Alles voelt “Apple”.</p>
+        </div>
+      </div>
+
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>Naam</th>
+              <th>Slug</th>
+              <th>Categorie</th>
+              <th>Prijs</th>
+              <th>Status</th>
+              <th style="text-align:right;">Acties</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="6" class="sub">Nog niet ingelogd.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
+    const LS_TOKEN = "sib_admin_token";
+
+    const el = (id) => document.getElementById(id);
+    const setAuthUI = (loggedIn, who = null) => {
+      el("loginBox").classList.toggle("hidden", loggedIn);
+      el("loggedBox").classList.toggle("hidden", !loggedIn);
+
+      if (loggedIn) {
+        el("authDot").className = "ok";
+        el("authText").textContent = "Ingelogd";
+        el("whoami").textContent = who?.email || "—";
+      } else {
+        el("authDot").className = "bad";
+        el("authText").textContent = "Niet ingelogd";
+        el("whoami").textContent = "";
+        el("tbody").innerHTML = `<tr><td colspan="6" class="sub">Nog niet ingelogd.</td></tr>`;
+        el("count").textContent = "—";
+      }
+    };
+
+    const token = () => localStorage.getItem(LS_TOKEN) || "";
+
+    async function apiHealth() {
+      try {
+        const r = await fetch(API + "/health");
+        if (!r.ok) throw new Error("health not ok");
+        el("apiState").className = "ok";
+        el("apiText").textContent = "online";
+      } catch {
+        el("apiState").className = "bad";
+        el("apiText").textContent = "offline";
+      }
+    }
+
+    async function whoAmI() {
+      const t = token();
+      if (!t) return null;
+      const r = await fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + t } });
+      if (!r.ok) return null;
+      return await r.json();
+    }
+
+    async function login(email, password) {
+      const r = await fetch(API + "/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await r.json().catch(()=>({}));
+      if (!r.ok) throw new Error(data.error || "Login failed");
+      localStorage.setItem(LS_TOKEN, data.token);
+      return data;
+    }
+
+    async function listProducts() {
+      const r = await fetch(API + "/admin/products", { headers: { Authorization: "Bearer " + token() } });
+      const data = await r.json().catch(()=>({}));
+      if (!r.ok) throw new Error(data.error || "Cannot list products");
+      return data.results || [];
+    }
+
+    async function createProduct(p) {
+      const r = await fetch(API + "/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token() },
+        body: JSON.stringify(p),
+      });
+      const data = await r.json().catch(()=>({}));
+      if (!r.ok) throw new Error(data.error || "Cannot create product");
+      return data;
+    }
+
+    async function delProduct(id) {
+      const r = await fetch(API + "/admin/products/" + encodeURIComponent(id), {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + token() },
+      });
+      const data = await r.json().catch(()=>({}));
+      if (!r.ok) throw new Error(data.error || "Cannot delete");
+      return data;
+    }
+
+    function priceFmt(cents, cur="EUR") {
+      const n = Number(cents||0) / 100;
+      try { return new Intl.NumberFormat("nl-NL", { style:"currency", currency: cur }).format(n); }
+      catch { return n.toFixed(2) + " " + cur; }
+    }
+
+    function render(rows) {
+      el("count").textContent = `${rows.length} items`;
+      if (!rows.length) {
+        el("tbody").innerHTML = `<tr><td colspan="6" class="sub">Nog geen producten. Voeg links een product toe.</td></tr>`;
+        return;
+      }
+      el("tbody").innerHTML = rows.map(r => {
+        const tag = r.status === "published" ? "published" : "draft";
+        return `
+          <tr>
+            <td><strong>${escapeHtml(r.name||"")}</strong><div class="sub">${escapeHtml((r.description||"").slice(0,70))}</div></td>
+            <td class="mono">${escapeHtml(r.slug||"")}</td>
+            <td class="mono">${escapeHtml(r.category||"")}</td>
+            <td>${priceFmt(r.price_cents, r.currency||"EUR")}</td>
+            <td><span class="tag ${tag}">${tag}</span></td>
+            <td>
+              <div class="actions">
+                <button class="btn mini" data-del="${escapeHtml(r.id)}">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      document.querySelectorAll("[data-del]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-del");
+          if (!confirm("Product verwijderen?")) return;
+          try {
+            await delProduct(id);
+            await refreshProducts();
+          } catch (e) { alert(String(e.message||e)); }
+        });
+      });
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+    }
+
+    async function refreshProducts() {
+      const rows = await listProducts();
+      render(rows);
+    }
+
+    // UI wiring
+    el("btnLogin").addEventListener("click", async () => {
+      try {
+        const email = el("email").value.trim();
+        const password = el("password").value;
+        await login(email, password);
+        const me = await whoAmI();
+        setAuthUI(true, me?.user);
+        await refreshProducts();
+      } catch (e) {
+        alert(String(e.message || e));
+      }
+    });
+
+    el("btnClear").addEventListener("click", () => {
+      el("email").value = "";
+      el("password").value = "";
+    });
+
+    el("btnLogout").addEventListener("click", () => {
+      localStorage.removeItem(LS_TOKEN);
+      setAuthUI(false);
+    });
+
+    el("btnRefresh").addEventListener("click", async () => {
+      try { await refreshProducts(); } catch(e){ alert(String(e.message||e)); }
+    });
+
+    el("btnCreate").addEventListener("click", async () => {
+      try {
+        el("msg").textContent = "";
+        const p = {
+          slug: el("p_slug").value.trim(),
+          name: el("p_name").value.trim(),
+          description: el("p_desc").value,
+          price_cents: Number(el("p_price").value || 0),
+          currency: "EUR",
+          category: el("p_category").value.trim() || "hygiene",
+          status: el("p_status").value,
+          specs: el("p_specs").value ? JSON.parse(el("p_specs").value) : {},
+          images: el("p_images").value ? JSON.parse(el("p_images").value) : [],
+        };
+        await createProduct(p);
+        el("msg").textContent = "Product toegevoegd ✓";
+        el("msg").style.color = "rgba(74,222,128,.95)";
+        await refreshProducts();
+      } catch (e) {
+        el("msg").textContent = String(e.message||e);
+        el("msg").style.color = "rgba(251,113,133,.95)";
+      }
+    });
+
+    // boot
+    (async function init(){
+      await apiHealth();
+      const me = await whoAmI();
+      if (me?.ok) {
+        setAuthUI(true, me.user);
+        await refreshProducts();
+      } else {
+        setAuthUI(false);
+      }
+    })();
+  </script>
+</body>
+</html>
