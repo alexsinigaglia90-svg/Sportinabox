@@ -1,4 +1,4 @@
-// js/products.js — complete, verrijkt (detail-link + cart localStorage + badge + safer parsing)
+// js/products.js — (jouw versie) met alleen toast aangepast naar #globalToast
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
@@ -109,39 +109,18 @@ function addToCartFromProduct(p) {
   writeCart(cart);
 }
 
+// ✅ AANGEPAST: toast gebruikt nu vaste <div id="globalToast">
 function toast(text = "Added to cart") {
-  // Minimal toast zonder extra HTML wijzigingen:
-  // maakt tijdelijk een subtiele glass toast in de hoek
-  const el = document.createElement("div");
+  const el = document.getElementById("globalToast");
+  if (!el) return;
+
   el.textContent = text;
-  el.style.position = "fixed";
-  el.style.right = "18px";
-  el.style.bottom = "18px";
-  el.style.zIndex = "9999";
-  el.style.padding = "10px 12px";
-  el.style.borderRadius = "14px";
-  el.style.border = "1px solid rgba(255,255,255,0.12)";
-  el.style.background = "rgba(0,0,0,0.30)";
-  el.style.backdropFilter = "blur(14px)";
-  el.style.webkitBackdropFilter = "blur(14px)";
-  el.style.color = "rgba(255,255,255,0.88)";
-  el.style.fontSize = "13px";
-  el.style.boxShadow = "0 16px 48px rgba(0,0,0,0.35)";
-  el.style.opacity = "0";
-  el.style.transform = "translateY(6px)";
-  el.style.transition = "opacity .16s ease, transform .16s ease";
-  document.body.appendChild(el);
+  el.classList.add("is-visible");
 
-  requestAnimationFrame(() => {
-    el.style.opacity = "1";
-    el.style.transform = "translateY(0px)";
-  });
-
-  window.setTimeout(() => {
-    el.style.opacity = "0";
-    el.style.transform = "translateY(6px)";
-    window.setTimeout(() => el.remove(), 220);
-  }, 1100);
+  window.clearTimeout(toast._t);
+  toast._t = window.setTimeout(() => {
+    el.classList.remove("is-visible");
+  }, 1200);
 }
 
 function productHref(slug) {
@@ -153,10 +132,6 @@ function card(p) {
   const img = images.length ? images[0] : "";
   const href = productHref(p.slug);
 
-  // Verrijking:
-  // - hele card is klikbaar naar detail
-  // - “Configureer” gaat naar configurator (als je nog hygiene.html gebruikt, laat zo)
-  // - “Add to cart” werkt via localStorage + badge + toast
   return `
   <article class="product-card" data-slug="${esc(p.slug)}" role="link" tabindex="0" aria-label="${esc(p.name)}">
     <div class="product-media">
@@ -195,9 +170,6 @@ async function mountProducts() {
     grid.innerHTML = products.map(card).join("");
     state.textContent = `${products.length} producten`;
 
-    // --- Verrijking: event delegation ---
-    // 1) Add-to-cart knop
-    // 2) Klik op card (niet op buttons/links) -> naar product detail
     grid.addEventListener("click", (e) => {
       const addBtn = e.target.closest("button[data-add]");
       if (addBtn) {
@@ -213,14 +185,11 @@ async function mountProducts() {
         return;
       }
 
-      // Klik op configure link: laat default navigeren
       const isActionLink = e.target.closest('a[data-action="configure"]');
       if (isActionLink) return;
 
-      // Klik op card zelf -> detail
       const cardEl = e.target.closest(".product-card[data-slug]");
       if (cardEl) {
-        // voorkom dat clicks op buttons/links in card alsnog navigeren
         const interactive = e.target.closest("button, a, input, textarea, select, label");
         if (interactive) return;
 
@@ -229,7 +198,6 @@ async function mountProducts() {
       }
     });
 
-    // Keyboard support: Enter/Space op card opent detail
     grid.addEventListener("keydown", (e) => {
       const cardEl = e.target.closest(".product-card[data-slug]");
       if (!cardEl) return;
@@ -238,7 +206,6 @@ async function mountProducts() {
         const slug = cardEl.getAttribute("data-slug");
         if (!slug) return;
 
-        // Niet triggeren als focus op knop/link zit
         const tag = (e.target.tagName || "").toLowerCase();
         if (tag === "button" || tag === "a" || tag === "input" || tag === "textarea" || tag === "select") return;
 
