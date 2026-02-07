@@ -4,95 +4,88 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sport in a Box</title>
+  <meta name="description" content="Premium sport- en hygiëneproducten met een slimme configurator." />
 
-  <!-- Styles -->
   <link rel="stylesheet" href="./styles.css" />
-
-  <!-- Products (API) -->
   <script defer src="./js/products.js"></script>
 </head>
 
 <body>
 
-  <!-- ================= HEADER ================= -->
-  <header class="header">
-    <div class="header-inner">
-      <a class="logo" href="./index.html">Sport in a Box</a>
+  <!-- Top navigation -->
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box home">
+        <!-- Als je een logo hebt: zet 'm in assets/img/logo.svg -->
+        <!-- <img class="brand__logo" src="./assets/img/logo.svg" alt="Sport in a Box"> -->
+        <span class="brand__text">Sport in a Box</span>
+      </a>
 
-      <nav class="nav">
-        <a class="nav-link is-active" href="./index.html">Home</a>
-        <a class="nav-link" href="./hygiene.html">Hygiëne</a>
-        <a class="nav-link" href="./about.html">Over ons</a>
-        <a class="nav-link" href="./contact.html">Contact</a>
+      <nav class="nav" aria-label="Hoofdnavigatie">
+        <a class="nav__link is-active" href="./index.html">Home</a>
+        <a class="nav__link" href="./hygiene.html">Hygiëne</a>
+        <a class="nav__link" href="./about.html">Over ons</a>
+        <a class="nav__link" href="./contact.html">Contact</a>
       </nav>
     </div>
   </header>
 
-  <!-- ================= HERO ================= -->
-  <section class="hero">
-    <video
-      class="hero-video"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="auto"
-    >
-      <source src="./assets/video/hero.mp4" type="video/mp4" />
-    </video>
-
-    <div class="hero-overlay"></div>
-
-    <div class="hero-content">
-      <span class="hero-pill">Premium Sportverzorging</span>
-
-      <h1 class="hero-title">
-        Sport<br />
-        <span>in a Box</span>
-      </h1>
-
-      <p class="hero-subtitle">
-        Slim samengestelde sport- en hygiëneproducten.<br />
-        Direct geleverd. Professioneel samengesteld.
-      </p>
-
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="./hygiene.html">Start configurator</a>
-        <a class="btn btn-ghost" href="#shop">Bekijk producten</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= PRODUCTS ================= -->
-  <main id="shop">
-    <section class="section">
-      <div class="section-head">
-        <div>
-          <h2 class="section-title">Shop</h2>
-          <p class="section-sub">
-            Alle producten komen realtime uit jouw eigen backend.
-          </p>
-        </div>
-
-        <div class="section-meta">
-          <span class="pill" data-products-state>—</span>
-        </div>
+  <main>
+    <!-- Compact hero (Zilveren Naald style) -->
+    <section class="hero hero--compact">
+      <div class="hero__media" aria-hidden="true">
+        <video class="hero__video" autoplay muted loop playsinline preload="metadata">
+          <source src="./assets/video/hero.mp4" type="video/mp4">
+        </video>
+        <div class="hero__shade"></div>
+        <div class="hero__vignette"></div>
       </div>
 
-      <div class="products-grid" data-products-grid></div>
+      <div class="container hero__content hero__content--center">
+        <span class="badge">Premium Sport & Hygiëne</span>
+
+        <h1 class="hero__title">
+          Sport in a<br><span class="hero__title--soft">Box</span>
+        </h1>
+
+        <p class="hero__subtitle">
+          Shop direct, of laat de configurator het juiste hygiëneproduct selecteren.
+        </p>
+
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="./hygiene.html">Start configurator</a>
+          <a class="btn btn--ghost" href="#shop">Bekijk producten</a>
+        </div>
+      </div>
     </section>
-  </main>
 
-  <!-- ================= FOOTER ================= -->
-  <footer class="footer">
-    <p>
-      © <span id="year"></span> Sport in a Box · Alle rechten voorbehouden
-    </p>
-  </footer>
+    <!-- Shop (live uit D1 via API) -->
+    <section id="shop" class="section">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h2 class="section__title">Shop</h2>
+            <p class="section__lead">Realtime producten uit jouw backend.</p>
+          </div>
+          <div class="section__meta">
+            <span class="pill" data-products-state>—</span>
+          </div>
+        </div>
+
+        <div class="products-grid" data-products-grid></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span>© <span id="year"></span> Sport in a Box</span>
+        <span class="footer__muted">Clean • Premium • Intelligent</span>
+      </div>
+    </footer>
+  </main>
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
-
 </body>
 </html>
