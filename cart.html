@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cart — Sport in a Box</title>
+
+  <meta name="description" content="Jouw winkelmandje." />
+  <link rel="stylesheet" href="./styles.css" />
+
+  <script defer src="./js/cart.js"></script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box home">Sport in a Box</a>
+
+      <nav class="nav">
+        <a class="nav__link" href="./index.html">Home</a>
+        <a class="nav__link" href="./hygiene.html">Hygiëne</a>
+        <a class="nav__link nav__link--active" href="./cart.html">
+          Cart <span id="cartBadge" class="badge" aria-hidden="true"></span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <section class="section-head">
+      <div>
+        <h1 class="section__title">Cart</h1>
+        <p class="section__lead">Overzicht van je geselecteerde producten.</p>
+      </div>
+      <div class="section__meta">
+        <span class="pill" id="cartMeta">—</span>
+      </div>
+    </section>
+
+    <section class="cart-shell">
+      <!-- Empty state -->
+      <div id="emptyState" class="glass cart-empty state--hidden">
+        <h2 class="h2">Je cart is leeg</h2>
+        <p class="muted">Voeg een product toe vanuit de shop.</p>
+        <a class="btn btn--primary" href="./index.html#shop">Naar de shop</a>
+      </div>
+
+      <!-- Main layout -->
+      <div id="cartLayout" class="cart-layout state--hidden">
+        <div class="glass cart-list">
+          <div class="cart-list__head">
+            <div class="cart-list__title">Items</div>
+            <button id="clearCart" class="btn btn--ghost btn--sm" type="button">Clear</button>
+          </div>
+
+          <div id="cartItems" class="cart-items"></div>
+        </div>
+
+        <aside class="glass cart-summary">
+          <h2 class="h2">Summary</h2>
+
+          <div class="summary-row">
+            <span class="muted">Subtotal</span>
+            <span id="subtotal">—</span>
+          </div>
+
+          <div class="summary-row summary-row--total">
+            <span>Total</span>
+            <span id="total">—</span>
+          </div>
+
+          <button class="btn btn--primary btn--full" type="button" id="checkoutBtn">
+            Checkout
+          </button>
+
+          <p class="muted small">
+            Checkout flow volgt hierna. Voor nu is dit een premium cart-overzicht.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
+  </main>
+</body>
+</html>
