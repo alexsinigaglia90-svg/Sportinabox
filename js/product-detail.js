@@ -1,16 +1,21 @@
+// js/product-detail.js — volledige versie (uniforme global toast + badge support)
+
 (() => {
   const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
   const CART_KEY = "sib_cart_v1";
 
   const $ = (id) => document.getElementById(id);
 
+  // Page blocks
   const elLoading = $("loading");
   const elError = $("error");
   const elProduct = $("product");
 
+  // Gallery
   const elMainImage = $("mainImage");
   const elThumbs = $("thumbs");
 
+  // Content
   const elCategory = $("category");
   const elName = $("name");
   const elPrice = $("price");
@@ -18,10 +23,23 @@
   const elHighlights = $("highlights");
   const elSpecGrid = $("specGrid");
 
+  // Actions
   const btnAdd = $("addToCart");
   const btnCopy = $("copyLink");
-  const elAddedMsg = $("addedMsg");
+
+  // Global toast (rechte onder)
+  const elGlobalToast = $("globalToast");
+
+  // Badge (in nav)
   const elCartBadge = $("cartBadge");
+
+  // Old inline toast (we gebruiken hem niet meer, maar we verstoppen hem defensief)
+  const elAddedMsg = $("addedMsg");
+
+  function setVisible(el, visible) {
+    if (!el) return;
+    el.classList.toggle("state--hidden", !visible);
+  }
 
   function getSlug() {
     const url = new URL(window.location.href);
@@ -30,7 +48,6 @@
 
   function formatPrice(priceCents, currency) {
     const value = (Number(priceCents || 0) / 100);
-    // Minimal, safe formatting
     try {
       return new Intl.NumberFormat("nl-NL", { style: "currency", currency: currency || "EUR" }).format(value);
     } catch {
@@ -48,10 +65,6 @@
     }
   }
 
-  function setVisible(el, visible) {
-    el.classList.toggle("state--hidden", !visible);
-  }
-
   function readCart() {
     try {
       const raw = localStorage.getItem(CART_KEY);
@@ -63,14 +76,11 @@
     }
   }
 
-  function writeCart(cart) {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    updateCartBadge();
-  }
-
   function updateCartBadge() {
+    if (!elCartBadge) return;
     const cart = readCart();
     const qty = cart.items.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
     if (qty > 0) {
       elCartBadge.textContent = String(qty);
       elCartBadge.style.display = "inline-flex";
@@ -82,47 +92,30 @@
     }
   }
 
-  function toastAdded() {
-    setVisible(elAddedMsg, true);
-    window.clearTimeout(toastAdded._t);
-    toastAdded._t = window.setTimeout(() => setVisible(elAddedMsg, false), 1400);
+  // ✅ Uniforme premium toast rechtsonder (zelfde als index/cart)
+  function toast(text = "Added to cart") {
+    if (!elGlobalToast) return;
+    elGlobalToast.textContent = text;
+    elGlobalToast.classList.add("is-visible");
+
+    window.clearTimeout(toast._t);
+    toast._t = window.setTimeout(() => {
+      elGlobalToast.classList.remove("is-visible");
+    }, 1200);
   }
 
-  function normalizeImageList(imagesJson) {
-    const arr = safeJsonParse(imagesJson, []);
+  function normalizeImageList(imagesJsonOrArray) {
+    // Support: images_json string OR array
+    if (Array.isArray(imagesJsonOrArray)) {
+      return imagesJsonOrArray
+        .map((x) => (typeof x === "string" ? x.trim() : ""))
+        .filter(Boolean);
+    }
+    const arr = safeJsonParse(imagesJsonOrArray, []);
     if (!Array.isArray(arr)) return [];
     return arr
       .map((x) => (typeof x === "string" ? x.trim() : ""))
       .filter(Boolean);
-  }
-
-  function toHighlights(specsObj) {
-    // Neem alleen “mooie” korte highlights
-    // Prioriteit op bekende keys, anders pak first few primitives.
-    const preferredKeys = ["hygiene_level", "material", "use_case", "size", "weight", "color", "indoor", "outdoor"];
-    const out = [];
-
-    for (const k of preferredKeys) {
-      if (specsObj && Object.prototype.hasOwnProperty.call(specsObj, k)) {
-        const v = specsObj[k];
-        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
-          out.push([k, v]);
-        }
-      }
-      if (out.length >= 4) break;
-    }
-
-    if (out.length < 4 && specsObj && typeof specsObj === "object") {
-      for (const [k, v] of Object.entries(specsObj)) {
-        if (out.some(([ek]) => ek === k)) continue;
-        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
-          out.push([k, v]);
-        }
-        if (out.length >= 4) break;
-      }
-    }
-
-    return out;
   }
 
   function labelize(key) {
@@ -131,54 +124,53 @@
       .replace(/\b\w/g, (m) => m.toUpperCase());
   }
 
-  function renderGallery(images, name) {
-    elThumbs.innerHTML = "";
+  function toHighlights(specsObj) {
+    const preferredKeys = ["hygiene_level", "material", "use_case", "size", "weight", "color", "indoor", "outdoor"];
+    const out = [];
 
-    const fallback = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900">
-        <rect width="100%" height="100%" fill="#0b0f19"/>
-        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9aa6bf" font-family="system-ui" font-size="44">
-          No image
-        </text>
-      </svg>
-    `);
+    for (const k of preferredKeys) {
+      if (specsObj && Object.prototype.hasOwnProperty.call(specsObj, k)) {
+        const v = specsObj[k];
+        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") out.push([k, v]);
+      }
+      if (out.length >= 4) break;
+    }
 
-    const list = images.length ? images : [fallback];
+    if (out.length < 4 && specsObj && typeof specsObj === "object") {
+      for (const [k, v] of Object.entries(specsObj)) {
+        if (out.some(([ek]) => ek === k)) continue;
+        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") out.push([k, v]);
+        if (out.length >= 4) break;
+      }
+    }
 
-    const setMain = (src) => {
-      elMainImage.src = src;
-      elMainImage.alt = name ? `${name} afbeelding` : "Product afbeelding";
-    };
+    return out;
+  }
 
-    setMain(list[0]);
+  function renderHighlights(specsObj) {
+    if (!elHighlights) return;
+    elHighlights.innerHTML = "";
+    const items = toHighlights(specsObj);
+    if (!items.length) return;
 
-    list.forEach((src, idx) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "thumb";
-      b.setAttribute("aria-label", `Afbeelding ${idx + 1}`);
-      b.innerHTML = `<img src="${src}" alt="" loading="lazy" />`;
-      b.addEventListener("click", () => {
-        setMain(src);
-        [...elThumbs.children].forEach((c) => c.classList.remove("thumb--active"));
-        b.classList.add("thumb--active");
-      });
-      if (idx === 0) b.classList.add("thumb--active");
-      elThumbs.appendChild(b);
-    });
+    for (const [k, v] of items) {
+      const pill = document.createElement("div");
+      pill.className = "pill";
+      pill.textContent = `${labelize(k)}: ${typeof v === "boolean" ? (v ? "Yes" : "No") : String(v)}`;
+      elHighlights.appendChild(pill);
+    }
   }
 
   function renderSpecs(specsObj) {
+    if (!elSpecGrid) return;
     elSpecGrid.innerHTML = "";
+
     if (!specsObj || typeof specsObj !== "object") {
       elSpecGrid.innerHTML = `<p class="muted">Geen specs beschikbaar.</p>`;
       return;
     }
 
-    const entries = Object.entries(specsObj)
-      .filter(([, v]) => v != null && v !== "")
-      .slice(0, 60);
-
+    const entries = Object.entries(specsObj).filter(([, v]) => v != null && v !== "").slice(0, 60);
     if (!entries.length) {
       elSpecGrid.innerHTML = `<p class="muted">Geen specs beschikbaar.</p>`;
       return;
@@ -195,16 +187,45 @@
     }
   }
 
-  function renderHighlights(specsObj) {
-    elHighlights.innerHTML = "";
-    const items = toHighlights(specsObj);
-    if (!items.length) return;
+  function renderGallery(images, name) {
+    if (!elThumbs || !elMainImage) return;
 
-    items.forEach(([k, v]) => {
-      const pill = document.createElement("div");
-      pill.className = "pill";
-      pill.textContent = `${labelize(k)}: ${typeof v === "boolean" ? (v ? "Yes" : "No") : String(v)}`;
-      elHighlights.appendChild(pill);
+    const fallback =
+      "data:image/svg+xml;charset=utf-8," +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900">
+          <rect width="100%" height="100%" fill="#0b0f19"/>
+          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9aa6bf" font-family="system-ui" font-size="44">
+            No image
+          </text>
+        </svg>
+      `);
+
+    const list = images.length ? images : [fallback];
+
+    const setMain = (src) => {
+      elMainImage.src = src;
+      elMainImage.alt = name ? `${name} afbeelding` : "Product afbeelding";
+    };
+
+    setMain(list[0]);
+    elThumbs.innerHTML = "";
+
+    list.forEach((src, idx) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "thumb";
+      b.setAttribute("aria-label", `Afbeelding ${idx + 1}`);
+      b.innerHTML = `<img src="${src}" alt="" loading="lazy" />`;
+
+      b.addEventListener("click", () => {
+        setMain(src);
+        [...elThumbs.children].forEach((c) => c.classList.remove("thumb--active"));
+        b.classList.add("thumb--active");
+      });
+
+      if (idx === 0) b.classList.add("thumb--active");
+      elThumbs.appendChild(b);
     });
   }
 
@@ -214,18 +235,15 @@
       headers: { "Accept": "application/json" }
     });
 
-    if (!res.ok) {
-      // 404/403 etc.
-      throw new Error(`HTTP_${res.status}`);
-    }
+    if (!res.ok) throw new Error(`HTTP_${res.status}`);
     return await res.json();
   }
 
   function addToCart(product) {
     const cart = readCart();
-    const images = normalizeImageList(product.images_json);
-    const existing = cart.items.find((it) => it.id === product.id);
+    const images = normalizeImageList(product.images_json ?? product.images);
 
+    const existing = cart.items.find((it) => it.id === product.id);
     if (existing) {
       existing.qty = (Number(existing.qty) || 1) + 1;
     } else {
@@ -237,15 +255,21 @@
         currency: product.currency || "EUR",
         qty: 1,
         image: images[0] || "",
-        meta: {} // later: configurator snapshot
+        meta: {}
       });
     }
 
-    writeCart(cart);
-    toastAdded();
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    updateCartBadge();
+
+    // ✅ Uniforme global toast
+    toast("Added to cart");
   }
 
   async function init() {
+    // Hide the old inline toast element if it exists (we don't use it anymore)
+    setVisible(elAddedMsg, false);
+
     updateCartBadge();
 
     const slug = getSlug();
@@ -259,41 +283,43 @@
     try {
       const p = await fetchProduct(slug);
 
-      // UI fill
       document.title = `${p.name} — Sport in a Box`;
 
-      elCategory.textContent = p.category ? String(p.category) : "";
-      elName.textContent = p.name || "";
-      elPrice.textContent = formatPrice(p.price_cents, p.currency);
-      elDescription.textContent = p.description || "";
+      if (elCategory) elCategory.textContent = p.category ? String(p.category) : "";
+      if (elName) elName.textContent = p.name || "";
+      if (elPrice) elPrice.textContent = formatPrice(p.price_cents, p.currency);
+      if (elDescription) elDescription.textContent = p.description || "";
 
       const specs = safeJsonParse(p.specs_json, {});
       renderHighlights(specs);
       renderSpecs(specs);
 
-      const images = normalizeImageList(p.images_json);
+      const images = normalizeImageList(p.images_json ?? p.images);
       renderGallery(images, p.name);
 
-      btnAdd.onclick = () => addToCart(p);
-      btnCopy.onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          btnCopy.textContent = "Copied";
-          window.setTimeout(() => (btnCopy.textContent = "Copy link"), 900);
-        } catch {
-          // fallback: do nothing
-        }
-      };
+      if (btnAdd) btnAdd.onclick = () => addToCart(p);
+
+      if (btnCopy) {
+        btnCopy.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            toast("Link copied");
+          } catch {
+            // fallback: do nothing
+          }
+        };
+      }
 
       setVisible(elLoading, false);
       setVisible(elError, false);
       setVisible(elProduct, true);
     } catch (e) {
+      console.error(e);
       setVisible(elLoading, false);
       setVisible(elProduct, false);
       setVisible(elError, true);
     }
   }
 
-  init();
+  document.addEventListener("DOMContentLoaded", init);
 })();
