@@ -291,3 +291,31 @@ body{
   white-space: nowrap !important;
   border: 0 !important;
 }
+
+/* Premium toast feedback */
+.global-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.30);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgba(255,255,255,0.88);
+  font-size: 13px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.global-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0px);
+}
