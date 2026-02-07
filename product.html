@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sport in a Box — Product</title>
+
+  <link rel="stylesheet" href="./styles.css" />
+  <meta name="color-scheme" content="dark light" />
+</head>
+<body>
+  <!-- Header/Nav: houd dezelfde look & feel als home/admin -->
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="./index.html">Sport in a Box</a>
+      <nav class="nav">
+        <a class="nav__link" href="./index.html#products">Products</a>
+        <a class="nav__link" href="./configurator.html">Configurator</a>
+        <a class="nav__link" href="./cart.html">Cart <span id="cartBadge" class="badge" aria-hidden="true"></span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="product-shell">
+      <!-- Loading skeleton -->
+      <div id="loading" class="skeleton">
+        <div class="skeleton__media"></div>
+        <div class="skeleton__content">
+          <div class="skeleton__line w60"></div>
+          <div class="skeleton__line w35"></div>
+          <div class="skeleton__line w90"></div>
+          <div class="skeleton__line w80"></div>
+          <div class="skeleton__line w70"></div>
+          <div class="skeleton__row">
+            <div class="skeleton__pill"></div>
+            <div class="skeleton__pill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div id="error" class="state state--hidden">
+        <h1 class="state__title">Product niet gevonden</h1>
+        <p class="state__text">Deze pagina bestaat niet, of het product is niet gepubliceerd.</p>
+        <a class="btn btn--primary" href="./index.html#products">Terug naar producten</a>
+      </div>
+
+      <!-- Product -->
+      <div id="product" class="product state--hidden">
+        <div class="product__left">
+          <div class="gallery glass">
+            <div class="gallery__main">
+              <img id="mainImage" alt="" loading="eager" />
+            </div>
+            <div id="thumbs" class="gallery__thumbs" aria-label="Product afbeeldingen"></div>
+          </div>
+        </div>
+
+        <div class="product__right">
+          <div class="glass product-card">
+            <div class="product-card__top">
+              <p id="category" class="meta"></p>
+              <h1 id="name" class="h1"></h1>
+              <p id="price" class="price"></p>
+            </div>
+
+            <p id="description" class="body"></p>
+
+            <div id="highlights" class="highlights"></div>
+
+            <div class="cta-row">
+              <button id="addToCart" class="btn btn--primary" type="button">Add to cart</button>
+              <button id="copyLink" class="btn btn--ghost" type="button">Copy link</button>
+            </div>
+
+            <p id="addedMsg" class="toast state--hidden" role="status" aria-live="polite">Added to cart</p>
+          </div>
+
+          <div class="glass specs">
+            <h2 class="h2">Specs</h2>
+            <div id="specGrid" class="spec-grid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./js/product-detail.js"></script>
+</body>
+</html>
