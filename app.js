@@ -1,12 +1,12 @@
-document.getElementById("year")?.textContent = new Date().getFullYear();
+// Footer year
+document.getElementById("year").textContent = new Date().getFullYear();
 
-// Optional: smooth scroll for internal anchors (like "Bekijk categorieën")
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener("click", (e) => {
-    const id = a.getAttribute("href");
-    const el = document.querySelector(id);
-    if (!el) return;
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener("click", e => {
+    const target = document.querySelector(link.getAttribute("href"));
+    if (!target) return;
     e.preventDefault();
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.scrollIntoView({ behavior: "smooth" });
   });
 });
