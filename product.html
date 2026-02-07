@@ -7,7 +7,11 @@
 
   <link rel="stylesheet" href="./styles.css" />
   <meta name="color-scheme" content="dark light" />
+
+  <!-- ✅ Badge werkt op deze pagina -->
+  <script defer src="./js/cart-badge.js"></script>
 </head>
+
 <body>
   <!-- Header/Nav: houd dezelfde look & feel als home/admin -->
   <header class="topbar">
@@ -16,7 +20,11 @@
       <nav class="nav">
         <a class="nav__link" href="./index.html#products">Products</a>
         <a class="nav__link" href="./configurator.html">Configurator</a>
-        <a class="nav__link" href="./cart.html">Cart <span id="cartBadge" class="badge" aria-hidden="true"></span></a>
+
+        <!-- ✅ Cart link + badge (id moet 1x per pagina) -->
+        <a class="nav__link" href="./cart.html">
+          Cart <span id="cartBadge" class="badge" aria-hidden="true"></span>
+        </a>
       </nav>
     </div>
   </header>
@@ -84,8 +92,12 @@
         </div>
       </div>
     </section>
+
+    <!-- ✅ Global toast (zelfde als op index/cart) -->
+    <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
   </main>
 
+  <!-- ✅ Je bestaande product script -->
   <script src="./js/product-detail.js"></script>
 </body>
 </html>
