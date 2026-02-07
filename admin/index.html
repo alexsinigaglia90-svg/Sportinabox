@@ -2,583 +2,411 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sportinabox — Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Sport in a Box</title>
+  <link rel="stylesheet" href="../styles.css" />
+
   <style>
-    :root{
-      --bg:#0b0f14;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.08);
-      --stroke:rgba(255,255,255,.12);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.65);
-      --muted2:rgba(255,255,255,.45);
-      --accent:#9EE7FF;
-      --good:#4ade80;
-      --bad:#fb7185;
-      --shadow: 0 20px 60px rgba(0,0,0,.45);
-      --radius: 22px;
-      --radius2: 16px;
-      --blur: 18px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:var(--font);
-      color:var(--text);
-      background:
-        radial-gradient(1200px 700px at 15% 10%, rgba(158,231,255,.12), transparent 55%),
-        radial-gradient(900px 600px at 85% 20%, rgba(167,139,250,.10), transparent 55%),
-        radial-gradient(900px 600px at 55% 95%, rgba(34,197,94,.08), transparent 60%),
-        var(--bg);
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:28px;
-    }
-    .shell{
-      width:min(1100px, 100%);
+    /* Admin app layout (glassy, Apple-like) */
+    .admin-app { min-height: 100vh; }
+    .admin-shell{
       display:grid;
-      grid-template-columns: 420px 1fr;
-      gap:18px;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+      padding: 18px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
     @media (max-width: 980px){
-      .shell{grid-template-columns:1fr}
-    }
-    .card{
-      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.04));
-      border:1px solid var(--stroke);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(var(--blur));
-      -webkit-backdrop-filter: blur(var(--blur));
-      overflow:hidden;
-    }
-    .pane{
-      padding:22px;
-    }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-bottom:18px;
-    }
-    .dot{
-      width:12px;height:12px;border-radius:999px;
-      background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.2) 40%, rgba(255,255,255,.0) 70%),
-                  linear-gradient(135deg, rgba(158,231,255,.9), rgba(167,139,250,.8));
-      box-shadow: 0 0 0 4px rgba(158,231,255,.08);
-    }
-    h1{
-      font-size:18px;
-      letter-spacing:.2px;
-      margin:0;
-    }
-    .sub{
-      color:var(--muted);
-      font-size:13px;
-      margin-top:6px;
-      line-height:1.35;
-    }
-    .row{display:flex;gap:10px;align-items:center}
-    .field{
-      margin-top:14px;
-    }
-    label{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:8px;
-    }
-    input, textarea, select{
-      width:100%;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      padding:12px 12px;
-      outline:none;
-      transition: transform .12s ease, border-color .12s ease, background .12s ease;
-    }
-    textarea{min-height:90px; resize: vertical;}
-    input:focus, textarea:focus, select:focus{
-      border-color: rgba(158,231,255,.55);
-      background: rgba(255,255,255,.08);
-      transform: translateY(-1px);
-    }
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      border-radius: 999px;
-      padding: 12px 14px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color:var(--text);
-      cursor:pointer;
-      transition: transform .14s ease, background .14s ease, border-color .14s ease;
-      user-select:none;
-      font-weight:600;
-      letter-spacing:.15px;
-    }
-    .btn:hover{
-      transform: translateY(-1px);
-      background: rgba(255,255,255,.11);
-      border-color: rgba(255,255,255,.2);
-    }
-    .btn:active{transform: translateY(0px) scale(.99);}
-    .btn.primary{
-      background: linear-gradient(135deg, rgba(158,231,255,.95), rgba(167,139,250,.85));
-      color:#061018;
-      border-color: rgba(158,231,255,.5);
-    }
-    .btn.primary:hover{filter: brightness(1.02);}
-    .btn.ghost{
-      background: transparent;
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.05);
-      color:var(--muted);
-    }
-    .ok{color:var(--good)}
-    .bad{color:var(--bad)}
-    .sep{
-      height:1px;
-      background: rgba(255,255,255,.10);
-      margin:18px 0;
+      .admin-shell{ grid-template-columns: 1fr; }
     }
 
-    /* Right side */
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:16px 18px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
+    .admin-side{
+      position: sticky;
+      top: 18px;
+      align-self: start;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
-    .title{
-      display:flex; gap:10px; align-items:baseline;
+    .admin-brand{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 12px; }
+    .admin-brand h1{ font-size: 14px; letter-spacing: .2px; margin:0; color: rgba(255,255,255,.9); }
+    .admin-user{ font-size: 12px; color: rgba(255,255,255,.62); }
+
+    .admin-nav{ display:grid; gap: 8px; margin-top: 12px; }
+    .admin-nav a{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.84);
+      text-decoration:none;
+      transition: transform .14s ease, background .14s ease;
     }
-    .title h2{margin:0;font-size:15px}
-    .title span{font-size:12px;color:var(--muted2)}
-    .grid{
-      padding:18px;
+    .admin-nav a:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.06); }
+    .admin-nav a.is-active{ background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.16); }
+
+    .admin-main{
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .admin-toprow{ display:flex; align-items:flex-end; justify-content:space-between; gap: 12px; margin-bottom: 12px; }
+    .admin-title{ margin:0; font-size: 18px; color: rgba(255,255,255,.92); }
+    .admin-sub{ margin:0; font-size: 12.5px; color: rgba(255,255,255,.62); }
+
+    .admin-actions{ display:flex; gap: 10px; flex-wrap: wrap; justify-content:flex-end; }
+
+    .admin-grid{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:14px;
+      gap: 14px;
+      margin-top: 12px;
     }
-    @media (max-width: 980px){
-      .grid{grid-template-columns:1fr}
+    @media (max-width: 980px){ .admin-grid{ grid-template-columns: 1fr; } }
+
+    .panel{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+      padding: 14px;
     }
-    .tile{
-      border-radius: var(--radius2);
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.05);
-      padding:14px;
-      transition: transform .14s ease, background .14s ease, border-color .14s ease;
+    .panel h3{ margin:0 0 10px; font-size: 13.5px; color: rgba(255,255,255,.90); }
+    .muted{ color: rgba(255,255,255,.62); }
+
+    .row{ display:flex; gap: 10px; flex-wrap: wrap; }
+    .row > *{ flex: 1; min-width: 200px; }
+
+    .field label{ display:block; font-size:12px; color: rgba(255,255,255,.66); margin-bottom: 6px; }
+    .field input, .field textarea, .field select{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.88);
+      outline: none;
     }
-    .tile:hover{
-      transform: translateY(-2px);
-      background: rgba(255,255,255,.07);
-      border-color: rgba(158,231,255,.28);
-    }
-    .tile h3{margin:0 0 6px;font-size:14px}
-    .tile p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.4}
-    .table{
-      padding:0 18px 18px;
-    }
-    table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      overflow:hidden;
-      border-radius: var(--radius2);
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-    }
-    th, td{
-      font-size:12.5px;
-      padding:12px 10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      color:var(--text);
-      text-align:left;
-      vertical-align:top;
-    }
-    th{color:var(--muted);font-weight:600;background:rgba(255,255,255,.03)}
-    tr:last-child td{border-bottom:none}
-    .actions{display:flex; gap:8px; justify-content:flex-end}
-    .mini{
-      padding:8px 10px;
-      font-size:12px;
+    .field textarea{ min-height: 110px; resize: vertical; }
+
+    .pillbar{ display:flex; gap: 8px; flex-wrap: wrap; }
+    .pillbtn{
+      padding: 8px 10px;
       border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.84);
+      cursor:pointer;
+      font-size: 12px;
+      transition: transform .14s ease, background .14s ease;
     }
-    .tag{
-      display:inline-flex;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.05);
-      color:var(--muted);
-      font-size:11px;
-      gap:6px;
-      align-items:center;
+    .pillbtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.06); }
+    .pillbtn.is-active{ background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.16); }
+
+    .table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 16px; }
+    .table th, .table td{ text-align:left; padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 12.5px; }
+    .table th{ color: rgba(255,255,255,.70); font-weight: 650; }
+    .table td{ color: rgba(255,255,255,.86); }
+    .tag{ display:inline-flex; padding: 4px 8px; border-radius: 999px; border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); font-size: 11.5px; }
+    .tag.published{ background: rgba(120,255,180,0.10); border-color: rgba(120,255,180,0.18); }
+    .tag.draft{ background: rgba(255,255,255,0.04); }
+
+    .imggrid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    @media (max-width: 980px){ .imggrid{ grid-template-columns: repeat(3, 1fr);} }
+    @media (max-width: 560px){ .imggrid{ grid-template-columns: repeat(2, 1fr);} }
+
+    .imgcard{
+      border-radius: 16px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.20);
+      position: relative;
     }
-    .tag.published{border-color: rgba(74,222,128,.35); color: rgba(74,222,128,.95); background: rgba(74,222,128,.08)}
-    .tag.draft{border-color: rgba(250,204,21,.25); color: rgba(250,204,21,.95); background: rgba(250,204,21,.08)}
-    .hint{
-      font-size:12px;color:var(--muted2);margin-top:10px;line-height:1.4
+    .imgcard img{ width:100%; height: 110px; object-fit: cover; display:block; }
+    .imgcard .imgactions{
+      position:absolute; inset: 8px 8px auto auto;
+      display:flex; gap: 6px;
     }
-    .hidden{display:none !important;}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+    .iconbtn{
+      width: 32px; height: 32px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.30);
+      color: rgba(255,255,255,0.90);
+      cursor:pointer;
+    }
+
+    .login-wrap{
+      max-width: 520px;
+      margin: 48px auto;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .state--hidden{ display:none !important; }
+
+    /* reuse your global toast */
+    .global-toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.30);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: rgba(255,255,255,0.88);
+      font-size: 13px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+      transition: opacity .16s ease, transform .16s ease;
+    }
+    .global-toast.is-visible{ opacity: 1; transform: translateY(0px); }
   </style>
+
+  <script defer src="./admin.js"></script>
 </head>
-<body>
-  <div class="shell">
-    <!-- LEFT: Auth -->
-    <section class="card">
-      <div class="pane">
-        <div class="brand">
-          <div class="dot"></div>
+
+<body class="admin-app">
+  <!-- LOGIN -->
+  <main id="loginView" class="login-wrap state--hidden">
+    <h1 class="admin-title">Admin</h1>
+    <p class="admin-sub">Log in om producten te beheren.</p>
+
+    <div class="row" style="margin-top:12px;">
+      <div class="field">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="admin@..." autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+    </div>
+
+    <div class="admin-actions" style="margin-top:12px;">
+      <button id="loginBtn" class="pillbtn" type="button">Login</button>
+    </div>
+  </main>
+
+  <!-- APP -->
+  <main id="appView" class="admin-shell state--hidden">
+    <aside class="admin-side">
+      <div class="admin-brand">
+        <h1>Sport in a Box</h1>
+        <button id="logoutBtn" class="pillbtn" type="button">Logout</button>
+      </div>
+      <div class="admin-user" id="meLabel">—</div>
+
+      <nav class="admin-nav" style="margin-top:12px;">
+        <a href="#products" id="navProducts">Products <span class="tag" id="navCount">—</span></a>
+        <a href="#analytics" id="navAnalytics">Analytics</a>
+        <a href="#settings" id="navSettings">Settings</a>
+      </nav>
+    </aside>
+
+    <section class="admin-main">
+      <!-- PRODUCTS -->
+      <div id="viewProducts" class="state--hidden">
+        <div class="admin-toprow">
           <div>
-            <h1>Sportinabox Admin</h1>
-            <div class="sub">Beheer producten, prijzen, specs en status. Apple-achtige flow, zonder rommel.</div>
+            <h2 class="admin-title">Products</h2>
+            <p class="admin-sub">Beheer je live catalogus (draft/published) en images.</p>
+          </div>
+          <div class="admin-actions">
+            <button id="newProductBtn" class="pillbtn" type="button">New product</button>
+            <button id="refreshBtn" class="pillbtn" type="button">Refresh</button>
           </div>
         </div>
 
-        <div id="authState" class="pill">
-          <span id="authDot">●</span>
-          <span id="authText">Niet ingelogd</span>
+        <div class="panel">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:36%;">Name</th>
+                <th>Slug</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th style="width:16%;">Price</th>
+                <th style="width:14%;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTbody"></tbody>
+          </table>
+          <p class="muted" id="productsState" style="margin:10px 0 0;">—</p>
         </div>
 
-        <div class="sep"></div>
-
-        <div id="loginBox">
-          <div class="field">
-            <label>Email</label>
-            <input id="email" type="email" placeholder="jij@bedrijf.nl" autocomplete="username" />
-          </div>
-          <div class="field">
-            <label>Wachtwoord</label>
-            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
-          </div>
-
-          <div class="field row" style="justify-content:space-between;margin-top:16px;">
-            <button class="btn primary" id="btnLogin">Inloggen</button>
-            <button class="btn ghost" id="btnClear">Reset</button>
+        <!-- EDITOR -->
+        <div id="editorWrap" class="panel state--hidden" style="margin-top:14px;">
+          <div class="admin-toprow" style="margin-bottom:10px;">
+            <div>
+              <h3 id="editorTitle">New product</h3>
+              <p class="admin-sub" id="editorSub">Werk in secties. Opslaan = naar D1.</p>
+            </div>
+            <div class="admin-actions">
+              <button id="cancelEditBtn" class="pillbtn" type="button">Close</button>
+              <button id="saveBtn" class="pillbtn" type="button">Save</button>
+            </div>
           </div>
 
-          <div class="hint">Tip: als login faalt, check of je admin user exact met dezelfde email in D1 staat.</div>
-        </div>
-
-        <div id="loggedBox" class="hidden">
-          <div class="sub">Ingelogd als</div>
-          <div id="whoami" style="margin-top:6px;font-weight:700;"></div>
-
-          <div class="field row" style="margin-top:16px;">
-            <button class="btn" id="btnRefresh">Refresh</button>
-            <button class="btn" id="btnLogout">Uitloggen</button>
+          <div class="pillbar" style="margin-bottom:12px;">
+            <button class="pillbtn is-active" data-tab="core" type="button">Core</button>
+            <button class="pillbtn" data-tab="content" type="button">Content</button>
+            <button class="pillbtn" data-tab="images" type="button">Images</button>
+            <button class="pillbtn" data-tab="specs" type="button">Specs</button>
+            <button class="pillbtn" data-tab="publish" type="button">Publish</button>
           </div>
 
-          <div class="sep"></div>
-
-          <div class="sub">Nieuw product</div>
-          <div class="field">
-            <label>Slug (url-vriendelijk)</label>
-            <input id="p_slug" placeholder="sport-in-a-box-basic" class="mono" />
-          </div>
-          <div class="field">
-            <label>Naam</label>
-            <input id="p_name" placeholder="Sport in a Box — Basic" />
-          </div>
-          <div class="field">
-            <label>Prijs (centen)</label>
-            <input id="p_price" placeholder="2999" class="mono" />
-          </div>
-          <div class="field">
-            <label>Categorie</label>
-            <input id="p_category" placeholder="hygiene" class="mono" />
-          </div>
-          <div class="field">
-            <label>Status</label>
-            <select id="p_status">
-              <option value="draft">draft</option>
-              <option value="published">published</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Beschrijving</label>
-            <textarea id="p_desc" placeholder="Korte, strakke omschrijving."></textarea>
-          </div>
-          <div class="field">
-            <label>Specs (JSON)</label>
-            <textarea id="p_specs" class="mono" placeholder='{"maat":"M","kleur":"zwart"}'></textarea>
-          </div>
-          <div class="field">
-            <label>Images (JSON array)</label>
-            <textarea id="p_images" class="mono" placeholder='["/assets/img/voorbeeld.jpg"]'></textarea>
-          </div>
-
-          <div class="field row" style="justify-content:space-between;">
-            <button class="btn primary" id="btnCreate">Product toevoegen</button>
-            <span id="msg" class="sub"></span>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- RIGHT: Dashboard -->
-    <section class="card">
-      <div class="topbar">
-        <div class="title">
-          <h2>Producten</h2>
-          <span id="count">—</span>
-        </div>
-        <div class="row">
-          <span class="pill">API: <span id="apiState" class="ok">●</span> <span id="apiText">—</span></span>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="tile">
-          <h3>Workflow</h3>
-          <p>Draft → Published. Public webshop leest alleen published producten via <span class="mono">/products</span>.</p>
-        </div>
-        <div class="tile">
-          <h3>UI-principe</h3>
-          <p>Rustig, premium, weinig ruis. Subtiele hovers en snelle acties. Alles voelt “Apple”.</p>
-        </div>
-      </div>
-
-      <div class="table">
-        <table>
-          <thead>
-            <tr>
-              <th>Naam</th>
-              <th>Slug</th>
-              <th>Categorie</th>
-              <th>Prijs</th>
-              <th>Status</th>
-              <th style="text-align:right;">Acties</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="6" class="sub">Nog niet ingelogd.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <script>
-    const API = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
-    const LS_TOKEN = "sib_admin_token";
-
-    const el = (id) => document.getElementById(id);
-    const setAuthUI = (loggedIn, who = null) => {
-      el("loginBox").classList.toggle("hidden", loggedIn);
-      el("loggedBox").classList.toggle("hidden", !loggedIn);
-
-      if (loggedIn) {
-        el("authDot").className = "ok";
-        el("authText").textContent = "Ingelogd";
-        el("whoami").textContent = who?.email || "—";
-      } else {
-        el("authDot").className = "bad";
-        el("authText").textContent = "Niet ingelogd";
-        el("whoami").textContent = "";
-        el("tbody").innerHTML = `<tr><td colspan="6" class="sub">Nog niet ingelogd.</td></tr>`;
-        el("count").textContent = "—";
-      }
-    };
-
-    const token = () => localStorage.getItem(LS_TOKEN) || "";
-
-    async function apiHealth() {
-      try {
-        const r = await fetch(API + "/health");
-        if (!r.ok) throw new Error("health not ok");
-        el("apiState").className = "ok";
-        el("apiText").textContent = "online";
-      } catch {
-        el("apiState").className = "bad";
-        el("apiText").textContent = "offline";
-      }
-    }
-
-    async function whoAmI() {
-      const t = token();
-      if (!t) return null;
-      const r = await fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + t } });
-      if (!r.ok) return null;
-      return await r.json();
-    }
-
-    async function login(email, password) {
-      const r = await fetch(API + "/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await r.json().catch(()=>({}));
-      if (!r.ok) throw new Error(data.error || "Login failed");
-      localStorage.setItem(LS_TOKEN, data.token);
-      return data;
-    }
-
-    async function listProducts() {
-      const r = await fetch(API + "/admin/products", { headers: { Authorization: "Bearer " + token() } });
-      const data = await r.json().catch(()=>({}));
-      if (!r.ok) throw new Error(data.error || "Cannot list products");
-      return data.results || [];
-    }
-
-    async function createProduct(p) {
-      const r = await fetch(API + "/admin/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token() },
-        body: JSON.stringify(p),
-      });
-      const data = await r.json().catch(()=>({}));
-      if (!r.ok) throw new Error(data.error || "Cannot create product");
-      return data;
-    }
-
-    async function delProduct(id) {
-      const r = await fetch(API + "/admin/products/" + encodeURIComponent(id), {
-        method: "DELETE",
-        headers: { Authorization: "Bearer " + token() },
-      });
-      const data = await r.json().catch(()=>({}));
-      if (!r.ok) throw new Error(data.error || "Cannot delete");
-      return data;
-    }
-
-    function priceFmt(cents, cur="EUR") {
-      const n = Number(cents||0) / 100;
-      try { return new Intl.NumberFormat("nl-NL", { style:"currency", currency: cur }).format(n); }
-      catch { return n.toFixed(2) + " " + cur; }
-    }
-
-    function render(rows) {
-      el("count").textContent = `${rows.length} items`;
-      if (!rows.length) {
-        el("tbody").innerHTML = `<tr><td colspan="6" class="sub">Nog geen producten. Voeg links een product toe.</td></tr>`;
-        return;
-      }
-      el("tbody").innerHTML = rows.map(r => {
-        const tag = r.status === "published" ? "published" : "draft";
-        return `
-          <tr>
-            <td><strong>${escapeHtml(r.name||"")}</strong><div class="sub">${escapeHtml((r.description||"").slice(0,70))}</div></td>
-            <td class="mono">${escapeHtml(r.slug||"")}</td>
-            <td class="mono">${escapeHtml(r.category||"")}</td>
-            <td>${priceFmt(r.price_cents, r.currency||"EUR")}</td>
-            <td><span class="tag ${tag}">${tag}</span></td>
-            <td>
-              <div class="actions">
-                <button class="btn mini" data-del="${escapeHtml(r.id)}">Delete</button>
+          <div class="admin-grid">
+            <!-- CORE -->
+            <div class="panel" id="tab_core">
+              <h3>Core</h3>
+              <div class="row">
+                <div class="field">
+                  <label>Name</label>
+                  <input id="fName" type="text" placeholder="Sport in a Box — Basic" />
+                </div>
+                <div class="field">
+                  <label>Slug (auto)</label>
+                  <input id="fSlug" type="text" placeholder="sport-in-a-box-basic" />
+                </div>
               </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
 
-      document.querySelectorAll("[data-del]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id = btn.getAttribute("data-del");
-          if (!confirm("Product verwijderen?")) return;
-          try {
-            await delProduct(id);
-            await refreshProducts();
-          } catch (e) { alert(String(e.message||e)); }
-        });
-      });
-    }
+              <div class="row" style="margin-top:10px;">
+                <div class="field">
+                  <label>Category</label>
+                  <input id="fCategory" type="text" placeholder="hygiene" />
+                </div>
+                <div class="field">
+                  <label>Currency</label>
+                  <input id="fCurrency" type="text" value="EUR" />
+                </div>
+              </div>
 
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, (m) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
-    }
+              <div class="row" style="margin-top:10px;">
+                <div class="field">
+                  <label>Price (EUR)</label>
+                  <input id="fPrice" type="text" placeholder="29,99" />
+                </div>
+              </div>
 
-    async function refreshProducts() {
-      const rows = await listProducts();
-      render(rows);
-    }
+              <p class="muted" style="margin:10px 0 0;">Tip: prijs invoeren als 29,99 — wij converteren naar cents.</p>
+            </div>
 
-    // UI wiring
-    el("btnLogin").addEventListener("click", async () => {
-      try {
-        const email = el("email").value.trim();
-        const password = el("password").value;
-        await login(email, password);
-        const me = await whoAmI();
-        setAuthUI(true, me?.user);
-        await refreshProducts();
-      } catch (e) {
-        alert(String(e.message || e));
-      }
-    });
+            <!-- CONTENT -->
+            <div class="panel" id="tab_content">
+              <h3>Content</h3>
+              <div class="field">
+                <label>Description</label>
+                <textarea id="fDescription" placeholder="Korte, strakke omschrijving."></textarea>
+              </div>
 
-    el("btnClear").addEventListener("click", () => {
-      el("email").value = "";
-      el("password").value = "";
-    });
+              <div class="field" style="margin-top:10px;">
+                <label>Highlights (1 per regel)</label>
+                <textarea id="fHighlights" placeholder="Premium kwaliteit&#10;Snelle levering&#10;Audit-proof"></textarea>
+              </div>
+            </div>
 
-    el("btnLogout").addEventListener("click", () => {
-      localStorage.removeItem(LS_TOKEN);
-      setAuthUI(false);
-    });
+            <!-- IMAGES -->
+            <div class="panel" id="tab_images">
+              <h3>Images</h3>
 
-    el("btnRefresh").addEventListener("click", async () => {
-      try { await refreshProducts(); } catch(e){ alert(String(e.message||e)); }
-    });
+              <div class="row">
+                <div class="field">
+                  <label>Upload images (van je schijf)</label>
+                  <input id="fImageFiles" type="file" accept="image/*" multiple />
+                </div>
+              </div>
 
-    el("btnCreate").addEventListener("click", async () => {
-      try {
-        el("msg").textContent = "";
-        const p = {
-          slug: el("p_slug").value.trim(),
-          name: el("p_name").value.trim(),
-          description: el("p_desc").value,
-          price_cents: Number(el("p_price").value || 0),
-          currency: "EUR",
-          category: el("p_category").value.trim() || "hygiene",
-          status: el("p_status").value,
-          specs: el("p_specs").value ? JSON.parse(el("p_specs").value) : {},
-          images: el("p_images").value ? JSON.parse(el("p_images").value) : [],
-        };
-        await createProduct(p);
-        el("msg").textContent = "Product toegevoegd ✓";
-        el("msg").style.color = "rgba(74,222,128,.95)";
-        await refreshProducts();
-      } catch (e) {
-        el("msg").textContent = String(e.message||e);
-        el("msg").style.color = "rgba(251,113,133,.95)";
-      }
-    });
+              <div class="admin-actions" style="margin-top:10px;">
+                <button id="uploadImagesBtn" class="pillbtn" type="button">Upload selected</button>
+              </div>
 
-    // boot
-    (async function init(){
-      await apiHealth();
-      const me = await whoAmI();
-      if (me?.ok) {
-        setAuthUI(true, me.user);
-        await refreshProducts();
-      } else {
-        setAuthUI(false);
-      }
-    })();
-  </script>
+              <p class="muted" id="uploadState" style="margin:10px 0 0;">—</p>
+              <div id="imageGrid" class="imggrid" style="margin-top:12px;"></div>
+            </div>
+
+            <!-- SPECS -->
+            <div class="panel" id="tab_specs">
+              <h3>Specs</h3>
+              <div class="field">
+                <label>Specs editor (key/value)</label>
+                <textarea id="fSpecsJson" placeholder='{"maat":"M","kleur":"zwart"}'></textarea>
+              </div>
+              <p class="muted" id="specsHint" style="margin:10px 0 0;">We valideren JSON en tonen errors direct.</p>
+            </div>
+
+            <!-- PUBLISH -->
+            <div class="panel" id="tab_publish">
+              <h3>Publish</h3>
+              <div class="row">
+                <div class="field">
+                  <label>Status</label>
+                  <select id="fStatus">
+                    <option value="draft">draft</option>
+                    <option value="published">published</option>
+                  </select>
+                </div>
+              </div>
+
+              <p class="muted" style="margin:10px 0 0;">
+                Alleen <b>published</b> is zichtbaar op de publieke webshop.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div id="viewAnalytics" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Analytics</h2>
+            <p class="admin-sub">Hier komt je site analytics dashboard.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Coming soon</h3>
+          <p class="muted">
+            Volgende stap: integratie met Cloudflare Web Analytics of custom events via je Worker.
+          </p>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="viewSettings" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Settings</h2>
+            <p class="admin-sub">Admin settings (later uitbreiden).</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Session</h3>
+          <p class="muted">Je bent ingelogd met JWT. Logout wist je token uit localStorage.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>
