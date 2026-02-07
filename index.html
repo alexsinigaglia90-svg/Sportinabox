@@ -4,75 +4,100 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sport in a Box</title>
+  <meta name="description" content="Shop hygiëneproducten met een slimme configurator." />
 
-  <!-- Styles -->
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box">
+        <!-- Zet je logo in /assets/logo.svg (of png) -->
+        <img class="brand__logo" src="./assets/logo.svg" alt="Sport in a Box" />
+      </a>
 
-  <!-- Header / Navigation -->
-  <header class="header">
-    <div class="container header__inner">
-      <a class="logo" href="./index.html">Sport in a Box</a>
-
-      <nav class="nav">
+      <nav class="nav" aria-label="Hoofdnavigatie">
         <a class="nav__link is-active" href="./index.html">Home</a>
         <a class="nav__link" href="./hygiene.html">Hygiëne</a>
         <a class="nav__link" href="./about.html">Over ons</a>
         <a class="nav__link" href="./contact.html">Contact</a>
       </nav>
+
+      <div class="topbar__actions">
+        <a class="iconbtn" href="./contact.html" aria-label="Contact">
+          <!-- simple icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 5h16v14H4V5Z" stroke="currentColor" stroke-width="1.6"/>
+            <path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Main content -->
-  <main class="container">
-
-    <!-- Hero -->
+  <!-- Hero with video background -->
+  <main>
     <section class="hero">
-      <h1>Sport in a Box</h1>
-      <p class="muted">
-        Alles wat je nodig hebt voor hygiënisch, veilig en professioneel sporten.
-      </p>
+      <!-- Video: zet je video in /assets/hero.mp4 -->
+      <video class="hero__video" autoplay muted loop playsinline preload="metadata" poster="./assets/hero-poster.jpg">
+        <source src="./assets/hero.mp4" type="video/mp4" />
+      </video>
+
+      <div class="hero__overlay"></div>
+
+      <div class="container hero__content">
+        <p class="pill">Webshop • Hygiëne • Slimme configurator</p>
+
+        <h1 class="hero__title">Sport in a Box</h1>
+        <p class="hero__subtitle">
+          Vind binnen 30 seconden het juiste hygiëneproduct voor jouw situatie.
+        </p>
+
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="./hygiene.html">Start configurator</a>
+          <a class="btn btn--ghost" href="#shop">Bekijk categorieën</a>
+        </div>
+      </div>
     </section>
 
-    <!-- Categories / Products -->
-    <section class="grid">
+    <!-- Shop preview / categories -->
+    <section id="shop" class="section">
+      <div class="container">
+        <h2 class="section__title">Categorieën</h2>
+        <p class="section__lead">Direct naar wat je zoekt.</p>
 
-      <article class="card">
-        <h2>Hygiëne</h2>
-        <p class="muted">
-          Stel het juiste hygiëneproduct samen op basis van jouw situatie.
-        </p>
-        <a class="btn" href="./hygiene.html">Start configurator</a>
-      </article>
+        <div class="grid">
+          <article class="card">
+            <h3>Hygiëne</h3>
+            <p>Configurator + bestsellers.</p>
+            <a class="card__link" href="./hygiene.html">Open</a>
+          </article>
 
-      <article class="card">
-        <h2>Accessoires</h2>
-        <p class="muted">
-          Binnenkort beschikbaar.
-        </p>
-      </article>
+          <article class="card">
+            <h3>Accessoires</h3>
+            <p>Binnenkort beschikbaar.</p>
+            <span class="card__muted">Coming soon</span>
+          </article>
 
-      <article class="card">
-        <h2>Bundles</h2>
-        <p class="muted">
-          Complete sportoplossingen, coming soon.
-        </p>
-      </article>
-
+          <article class="card">
+            <h3>Bundles</h3>
+            <p>Complete sets, coming soon.</p>
+            <span class="card__muted">Coming soon</span>
+          </article>
+        </div>
+      </div>
     </section>
 
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span>© <span id="year"></span> Sport in a Box</span>
+        <span class="footer__muted">Clean • Fast • Premium</span>
+      </div>
+    </footer>
   </main>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container footer__inner">
-      <span>© <span id="year"></span> Sport in a Box</span>
-    </div>
-  </footer>
-
-  <!-- Scripts -->
   <script src="./app.js"></script>
 </body>
 </html>
