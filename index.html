@@ -5,20 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sport in a Box</title>
   <meta name="description" content="Premium sport- en hygiëneproducten met een slimme configurator." />
-
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
 
-  <!-- Top navigation -->
+  <!-- Header -->
   <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="./index.html">
         <img class="brand__logo" src="./assets/img/logo.svg" alt="Sport in a Box">
       </a>
 
-      <nav class="nav">
+      <nav class="nav" aria-label="Hoofdnavigatie">
         <a class="nav__link is-active" href="./index.html">Home</a>
         <a class="nav__link" href="./hygiene.html">Hygiëne</a>
         <a class="nav__link" href="./about.html">Over ons</a>
@@ -27,29 +26,26 @@
     </div>
   </header>
 
-  <!-- Hero with video -->
   <main>
-    <section class="hero">
-      <video
-        class="hero__video"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        poster="./assets/img/hero-poster.jpg">
-        <source src="./assets/video/hero.mp4" type="video/mp4">
-      </video>
+    <!-- Compact hero (zoals voorbeeld) -->
+    <section class="hero hero--compact">
+      <div class="hero__media" aria-hidden="true">
+        <video class="hero__video" autoplay muted loop playsinline preload="metadata" poster="./assets/img/hero-poster.jpg">
+          <source src="./assets/video/hero.mp4" type="video/mp4">
+        </video>
+        <div class="hero__shade"></div>
+        <div class="hero__vignette"></div>
+      </div>
 
-      <div class="hero__overlay"></div>
+      <div class="container hero__content hero__content--center">
+        <span class="badge">Premium Sport & Hygiëne</span>
 
-      <div class="container hero__content">
-        <p class="pill">Premium • Webshop • Configurator</p>
-
-        <h1 class="hero__title">Sport in a Box</h1>
+        <h1 class="hero__title">
+          Sport in a<br><span class="hero__title--soft">Box</span>
+        </h1>
 
         <p class="hero__subtitle">
-          De premium one-stop shop voor hygiënisch en professioneel sporten.
+          Shop direct, of laat de configurator het juiste hygiëneproduct selecteren.
         </p>
 
         <div class="hero__cta">
