@@ -889,3 +889,6 @@ body{
 @keyframes pdShimmer {
   100% { transform: translateX(100%); }
 }
+
+/* Hard enforce: hide anything with [hidden] (prevents skeleton staying visible) */
+[hidden] { display: none !important; }
