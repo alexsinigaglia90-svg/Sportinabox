@@ -3,15 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>Product — Sport in a Box</title>
   <meta name="description" content="Premium sport- en hygiëneproducten." />
+
+  <!-- Global styles -->
   <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Product detail logic -->
   <script defer src="./js/product.js"></script>
   <script defer src="./js/cart-badge.js"></script>
 </head>
 
 <body>
-  <!-- Top navigation (zelfde stijl als index) -->
+  <!-- Top navigation -->
   <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="./index.html" aria-label="Sport in a Box home">
@@ -32,21 +37,24 @@
 
   <main class="pd">
     <div class="container">
+
       <!-- Breadcrumb / back -->
       <div class="pd__crumbs">
-        <a class="pd__back" href="./index.html#shop" aria-label="Terug naar producten">← Terug</a>
+        <a class="pd__back" href="./index.html#shop">← Terug</a>
         <span class="pd__sep">•</span>
         <span class="pd__crumb" id="pdCrumbName">Product</span>
       </div>
 
-      <!-- Error state -->
+      <!-- Not found -->
       <section id="pdNotFound" class="pd__notice" hidden>
         <h1 class="pd__noticeTitle">Product niet gevonden</h1>
-        <p class="pd__noticeText">Deze pagina bestaat niet, of het product is niet gepubliceerd.</p>
+        <p class="pd__noticeText">
+          Deze pagina bestaat niet, of het product is niet gepubliceerd.
+        </p>
         <a class="btn btn--ghost" href="./index.html#shop">Terug naar producten</a>
       </section>
 
-      <!-- Skeleton (shown while loading) -->
+      <!-- Skeleton (loading state) -->
       <section id="pdSkeleton" class="pd__grid">
         <div class="pd__gallery pd__card">
           <div class="pd__heroSkeleton"></div>
@@ -75,20 +83,22 @@
         </div>
       </section>
 
-      <!-- Real content -->
+      <!-- Real product content -->
       <section id="pdContent" class="pd__grid" hidden>
+
         <!-- Gallery -->
         <div class="pd__gallery pd__card">
           <div class="pd__hero">
             <img id="pdHeroImg" class="pd__heroImg" alt="" />
           </div>
 
-          <div id="pdThumbs" class="pd__thumbs" aria-label="Product afbeeldingen"></div>
+          <div id="pdThumbs" class="pd__thumbs"></div>
         </div>
 
-        <!-- Info -->
+        <!-- Product info -->
         <div class="pd__info pd__card">
           <div class="pd__kicker">Sport in a Box</div>
+
           <h1 id="pdTitle" class="pd__title">—</h1>
 
           <div class="pd__priceRow">
@@ -140,20 +150,19 @@
             <details class="pd__details">
               <summary class="pd__summary">Verzending & retour</summary>
               <div class="pd__textBlock">
-                <p>Voor 22:00 besteld = morgen in huis (NL). Retour binnen 14 dagen.</p>
-                <p>Premium verpakt, zonder gedoe.</p>
+                <p>Voor 22:00 besteld = morgen in huis (NL).</p>
+                <p>Retourneren binnen 14 dagen. Premium verpakt.</p>
               </div>
             </details>
           </div>
         </div>
       </section>
+
     </div>
   </main>
 
+  <!-- Global toast -->
   <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
 
-  <script>
-    // year etc. (optional)
-  </script>
 </body>
 </html>
