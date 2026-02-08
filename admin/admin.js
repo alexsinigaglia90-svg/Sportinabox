@@ -239,15 +239,76 @@
     });
   }
 
-  function renderImageGrid() {
-    if (!imageGrid) return;
-    imageGrid.innerHTML = "";
+ function renderImageGrid() {
+  if (!imageGrid) return;
+  imageGrid.innerHTML = "";
 
-    const list = state.images || [];
-    if (!list.length) {
-      imageGrid.innerHTML = `<p class="muted">Nog geen images. Upload vanaf je schijf.</p>`;
-      return;
-    }
+  const list = state.images || [];
+  if (!list.length) {
+    imageGrid.innerHTML = `<p class="muted">Nog geen images. Upload vanaf je schijf.</p>`;
+    return;
+  }
+
+  list.forEach((url, idx) => {
+    const card = document.createElement("div");
+    card.className = "imgcard";
+    card.setAttribute("draggable", "true");
+    card.dataset.idx = String(idx);
+
+    card.innerHTML = `
+      <img src="${url}" alt="" />
+      <div class="imgactions">
+        <button class="iconbtn" type="button" data-rm="${idx}" title="Remove">✕</button>
+      </div>
+    `;
+
+    // start dragging
+    card.addEventListener("dragstart", (e) => {
+      card.classList.add("is-dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(idx));
+    });
+
+    // cleanup
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      imageGrid
+        .querySelectorAll(".imgcard")
+        .forEach((el) => el.classList.remove("is-drop-target"));
+    });
+
+    // allow drop
+    card.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      card.classList.add("is-drop-target");
+    });
+
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("is-drop-target");
+    });
+
+    // reorder on drop
+    card.addEventListener("drop", (e) => {
+      e.preventDefault();
+      card.classList.remove("is-drop-target");
+
+      const from = Number(e.dataTransfer.getData("text/plain"));
+      const to = Number(card.dataset.idx);
+      if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return;
+
+      const arr = state.images;
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+
+      renderImageGrid();
+      toast("Image order updated");
+    });
+
+    imageGrid.appendChild(card);
+  });
+}
+
 
     list.forEach((url, idx) => {
       const card = document.createElement("div");
@@ -483,35 +544,17 @@
     });
 
     if (!imageGrid) return;
-    imageGrid.addEventListener("click", (e) => {
-      const up = e.target.closest("[data-up]");
-      const down = e.target.closest("[data-down]");
-      const rm = e.target.closest("[data-rm]");
+imageGrid.addEventListener("click", (e) => {
+  const rm = e.target.closest("[data-rm]");
+  if (!rm) return;
 
-      if (up) {
-        const i = Number(up.getAttribute("data-up"));
-        if (i > 0) {
-          const tmp = state.images[i - 1];
-          state.images[i - 1] = state.images[i];
-          state.images[i] = tmp;
-          renderImageGrid();
-        }
-      }
-      if (down) {
-        const i = Number(down.getAttribute("data-down"));
-        if (i < state.images.length - 1) {
-          const tmp = state.images[i + 1];
-          state.images[i + 1] = state.images[i];
-          state.images[i] = tmp;
-          renderImageGrid();
-        }
-      }
-      if (rm) {
-        const i = Number(rm.getAttribute("data-rm"));
-        state.images.splice(i, 1);
-        renderImageGrid();
-      }
-    });
+  const i = Number(rm.getAttribute("data-rm"));
+  if (!Number.isFinite(i)) return;
+
+  state.images.splice(i, 1);
+  renderImageGrid();
+  toast("Image removed");
+});
   }
 
   function wireCoreUX() {
