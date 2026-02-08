@@ -110,8 +110,10 @@ function initForm() {
     if (message.length < 10) return setStatus("Je bericht is te kort (min. 10 tekens).", "error");
 
     setStatus("");
-    btn.disabled = true;
-    btn.textContent = "Versturen…";
+btn.disabled = true;
+btn.textContent = "Versturen…";
+btn.classList.add("is-loading");
+;
 
     try {
       await submitContact({ name, email, phone, topic, message, page: window.location.href });
@@ -129,10 +131,11 @@ function initForm() {
     } catch (err) {
       setStatus(String(err.message || "Er ging iets mis."), "error");
       toast("Versturen mislukt");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Verstuur bericht";
-    }
+} finally {
+  btn.disabled = false;
+  btn.classList.remove("is-loading");
+  btn.textContent = "Verstuur bericht";
+}
   });
 }
 
