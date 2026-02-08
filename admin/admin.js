@@ -239,89 +239,69 @@
     });
   }
 
-function renderImageGrid() {
-  if (!imageGrid) return;
-  imageGrid.innerHTML = "";
+  // --- Images: drag & drop reorder + remove ---
+  function renderImageGrid() {
+    if (!imageGrid) return;
+    imageGrid.innerHTML = "";
 
-  const list = state.images || [];
-  if (!list.length) {
-    imageGrid.innerHTML = `<p class="muted">Nog geen images. Upload vanaf je schijf.</p>`;
-    return;
-  }
-
-  list.forEach((url, idx) => {
-    const card = document.createElement("div");
-    card.className = "imgcard";
-    card.setAttribute("draggable", "true");
-    card.dataset.idx = String(idx);
-
-    card.innerHTML = `
-      <img src="${url}" alt="" />
-      <div class="imgactions">
-        <button class="iconbtn" type="button" data-rm="${idx}" title="Remove">✕</button>
-      </div>
-    `;
-
-    // start dragging
-    card.addEventListener("dragstart", (e) => {
-      card.classList.add("is-dragging");
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", String(idx));
-    });
-
-    // cleanup
-    card.addEventListener("dragend", () => {
-      card.classList.remove("is-dragging");
-      imageGrid
-        .querySelectorAll(".imgcard")
-        .forEach((el) => el.classList.remove("is-drop-target"));
-    });
-
-    // allow drop
-    card.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      card.classList.add("is-drop-target");
-    });
-
-    card.addEventListener("dragleave", () => {
-      card.classList.remove("is-drop-target");
-    });
-
-    // reorder on drop
-    card.addEventListener("drop", (e) => {
-      e.preventDefault();
-      card.classList.remove("is-drop-target");
-
-      const from = Number(e.dataTransfer.getData("text/plain"));
-      const to = Number(card.dataset.idx);
-      if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return;
-
-      const arr = state.images;
-      const [moved] = arr.splice(from, 1);
-      arr.splice(to, 0, moved);
-
-      renderImageGrid();
-      toast("Image order updated");
-    });
-
-    imageGrid.appendChild(card);
-  });
-}
-
-
+    const list = state.images || [];
+    if (!list.length) {
+      imageGrid.innerHTML = `<p class="muted">Nog geen images. Upload vanaf je schijf.</p>`;
+      return;
+    }
 
     list.forEach((url, idx) => {
       const card = document.createElement("div");
       card.className = "imgcard";
+      card.setAttribute("draggable", "true");
+      card.dataset.idx = String(idx);
+
       card.innerHTML = `
         <img src="${url}" alt="" />
         <div class="imgactions">
-          <button class="iconbtn" type="button" data-up="${idx}" title="Move up">↑</button>
-          <button class="iconbtn" type="button" data-down="${idx}" title="Move down">↓</button>
           <button class="iconbtn" type="button" data-rm="${idx}" title="Remove">✕</button>
         </div>
       `;
+
+      card.addEventListener("dragstart", (e) => {
+        card.classList.add("is-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(idx));
+      });
+
+      card.addEventListener("dragend", () => {
+        card.classList.remove("is-dragging");
+        imageGrid
+          .querySelectorAll(".imgcard")
+          .forEach((el) => el.classList.remove("is-drop-target"));
+      });
+
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        card.classList.add("is-drop-target");
+      });
+
+      card.addEventListener("dragleave", () => {
+        card.classList.remove("is-drop-target");
+      });
+
+      card.addEventListener("drop", (e) => {
+        e.preventDefault();
+        card.classList.remove("is-drop-target");
+
+        const from = Number(e.dataTransfer.getData("text/plain"));
+        const to = Number(card.dataset.idx);
+        if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return;
+
+        const arr = state.images;
+        const [moved] = arr.splice(from, 1);
+        arr.splice(to, 0, moved);
+
+        renderImageGrid();
+        toast("Image order updated");
+      });
+
       imageGrid.appendChild(card);
     });
   }
@@ -531,31 +511,31 @@ function renderImageGrid() {
       const del = e.target.closest("[data-del]");
 
       if (edit) {
-        const id = Number(edit.getAttribute("data-edit"));
-        const p = (state.products || []).find((x) => x.id === id);
+        const id = edit.getAttribute("data-edit");
+        const p = (state.products || []).find((x) => String(x.id) === String(id));
         if (p) openEditor(p);
       }
 
       if (del) {
-        const id = Number(del.getAttribute("data-del"));
-        if (!Number.isFinite(id)) return;
+        const id = del.getAttribute("data-del");
+        if (!id) return;
         if (!confirm("Delete this product?")) return;
         await deleteProduct(id);
       }
     });
 
     if (!imageGrid) return;
-imageGrid.addEventListener("click", (e) => {
-  const rm = e.target.closest("[data-rm]");
-  if (!rm) return;
+    imageGrid.addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-rm]");
+      if (!rm) return;
 
-  const i = Number(rm.getAttribute("data-rm"));
-  if (!Number.isFinite(i)) return;
+      const i = Number(rm.getAttribute("data-rm"));
+      if (!Number.isFinite(i)) return;
 
-  state.images.splice(i, 1);
-  renderImageGrid();
-  toast("Image removed");
-});
+      state.images.splice(i, 1);
+      renderImageGrid();
+      toast("Image removed");
+    });
   }
 
   function wireCoreUX() {
