@@ -1,7 +1,34 @@
-// js/products.js — (jouw versie) met alleen toast aangepast naar #globalToast
+// js/products.js — Sport in a Box (Shop grid)
+// Updates:
+// - Cloudflare Image Transformations engine (/cdn-cgi/image/...) for perfect crops + optimization
+// - Card image framed 4:3 + object-fit cover via inline styles (safe, no CSS dependency)
+// - Removed "Configureer" button
+// - Make "Add to cart" more visible (extra class + safe inline defaults)
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
+
+/**
+ * Cloudflare Image Transformations wrapper.
+ * Works when "Resize images from any origin" is enabled.
+ * Source URLs are your Cloudflare Images delivery URLs (imagedelivery.net/...).
+ */
+function cfImage(url, opts = {}) {
+  if (!url) return "";
+
+  const {
+    w = 1200,
+    h = 900,
+    fit = "cover",
+    q = 85,
+    format = "auto"
+  } = opts;
+
+  const params = `w=${w},h=${h},fit=${fit},quality=${q},format=${format}`;
+
+  // Serve via your own domain so /cdn-cgi/image works
+  return `${location.origin}/cdn-cgi/image/${params}/${url}`;
+}
 
 async function fetchProducts() {
   const r = await fetch(`${API_BASE}/products`, {
@@ -129,25 +156,43 @@ function productHref(slug) {
 
 function card(p) {
   const images = normalizeImageList(p.images_json ?? p.images);
-  const img = images.length ? images[0] : "";
+  const original = images.length ? images[0] : "";
   const href = productHref(p.slug);
+
+  // optimized delivery (crop to 4:3 for cards)
+  const imgOptimized = original ? cfImage(original, { w: 1200, h: 900, fit: "cover", q: 85 }) : "";
+
+  // Inline styles are used here so this works even if your CSS doesn’t yet include the new classes.
+  // You can later move these to styles.css (cleaner), but this makes it “bulletproof” now.
+  const mediaStyle = "width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:18px;background:rgba(255,255,255,0.06);";
+  const imgStyle = "width:100%;height:100%;display:block;object-fit:cover;object-position:center;";
 
   return `
   <article class="product-card" data-slug="${esc(p.slug)}" role="link" tabindex="0" aria-label="${esc(p.name)}">
-    <div class="product-media">
-      ${img ? `<img src="${esc(img)}" alt="${esc(p.name)}" loading="lazy" />` : `<div class="media-fallback">Sportinabox</div>`}
+    <div class="product-media product-card__media" style="${mediaStyle}">
+      ${imgOptimized
+        ? `<img class="product-card__img" style="${imgStyle}" src="${esc(imgOptimized)}" alt="${esc(p.name)}" loading="lazy" />`
+        : `<div class="media-fallback">Sportinabox</div>`}
     </div>
+
     <div class="product-body">
       <div class="product-top">
         <h3 class="product-title">${esc(p.name)}</h3>
         <div class="product-price">${euro(p.price_cents, p.currency || "EUR")}</div>
       </div>
       <p class="product-desc">${esc((p.description || "").slice(0, 110))}</p>
+
       <div class="product-actions">
-        <a class="btn btn-primary" href="./hygiene.html" data-action="configure">Configureer</a>
-        <button class="btn btn-ghost" type="button" data-add="${esc(p.slug)}" data-action="add">Add to cart</button>
+        <button
+          class="btn btn-ghost btn-add-to-cart"
+          style="opacity:1;color:#fff;border:1px solid rgba(255,255,255,0.30);background:rgba(255,255,255,0.14);"
+          type="button"
+          data-add="${esc(p.slug)}"
+          data-action="add"
+        >Add to cart</button>
       </div>
     </div>
+
     <a class="sr-only" href="${href}">Open ${esc(p.name)}</a>
   </article>`;
 }
@@ -184,9 +229,6 @@ async function mountProducts() {
         toast("Added to cart");
         return;
       }
-
-      const isActionLink = e.target.closest('a[data-action="configure"]');
-      if (isActionLink) return;
 
       const cardEl = e.target.closest(".product-card[data-slug]");
       if (cardEl) {
