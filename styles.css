@@ -1331,3 +1331,17 @@ body {
 .wa-float__dot {
   animation: pulseDot 1.8s ease-in-out infinite;
 }
+
+/* Subtle error shake (only when we add .is-error on form) */
+@keyframes softShake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+.cp__card.is-error {
+  animation: softShake 260ms ease-in-out;
+}
