@@ -3,25 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sport in a Box — Product</title>
-
+  <title>Product — Sport in a Box</title>
+  <meta name="description" content="Premium sport- en hygiëneproducten." />
   <link rel="stylesheet" href="./styles.css" />
-  <meta name="color-scheme" content="dark light" />
-
-  <!-- ✅ Badge werkt op deze pagina -->
+  <script defer src="./js/product.js"></script>
   <script defer src="./js/cart-badge.js"></script>
 </head>
 
 <body>
-  <!-- Header/Nav: houd dezelfde look & feel als home/admin -->
+  <!-- Top navigation (zelfde stijl als index) -->
   <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="./index.html">Sport in a Box</a>
-      <nav class="nav">
-        <a class="nav__link" href="./index.html#products">Products</a>
-        <a class="nav__link" href="./configurator.html">Configurator</a>
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box home">
+        <span class="brand__text">Sport in a Box</span>
+      </a>
 
-        <!-- ✅ Cart link + badge (id moet 1x per pagina) -->
+      <nav class="nav" aria-label="Hoofdnavigatie">
+        <a class="nav__link" href="./index.html">Home</a>
+        <a class="nav__link" href="./hygiene.html">Hygiëne</a>
+        <a class="nav__link" href="./about.html">Over ons</a>
+        <a class="nav__link" href="./contact.html">Contact</a>
         <a class="nav__link" href="./cart.html">
           Cart <span id="cartBadge" class="badge" aria-hidden="true"></span>
         </a>
@@ -29,75 +30,130 @@
     </div>
   </header>
 
-  <main class="page">
-    <section class="product-shell">
-      <!-- Loading skeleton -->
-      <div id="loading" class="skeleton">
-        <div class="skeleton__media"></div>
-        <div class="skeleton__content">
-          <div class="skeleton__line w60"></div>
-          <div class="skeleton__line w35"></div>
-          <div class="skeleton__line w90"></div>
-          <div class="skeleton__line w80"></div>
-          <div class="skeleton__line w70"></div>
-          <div class="skeleton__row">
-            <div class="skeleton__pill"></div>
-            <div class="skeleton__pill"></div>
-          </div>
-        </div>
+  <main class="pd">
+    <div class="container">
+      <!-- Breadcrumb / back -->
+      <div class="pd__crumbs">
+        <a class="pd__back" href="./index.html#shop" aria-label="Terug naar producten">← Terug</a>
+        <span class="pd__sep">•</span>
+        <span class="pd__crumb" id="pdCrumbName">Product</span>
       </div>
 
       <!-- Error state -->
-      <div id="error" class="state state--hidden">
-        <h1 class="state__title">Product niet gevonden</h1>
-        <p class="state__text">Deze pagina bestaat niet, of het product is niet gepubliceerd.</p>
-        <a class="btn btn--primary" href="./index.html#products">Terug naar producten</a>
-      </div>
+      <section id="pdNotFound" class="pd__notice" hidden>
+        <h1 class="pd__noticeTitle">Product niet gevonden</h1>
+        <p class="pd__noticeText">Deze pagina bestaat niet, of het product is niet gepubliceerd.</p>
+        <a class="btn btn--ghost" href="./index.html#shop">Terug naar producten</a>
+      </section>
 
-      <!-- Product -->
-      <div id="product" class="product state--hidden">
-        <div class="product__left">
-          <div class="gallery glass">
-            <div class="gallery__main">
-              <img id="mainImage" alt="" loading="eager" />
-            </div>
-            <div id="thumbs" class="gallery__thumbs" aria-label="Product afbeeldingen"></div>
+      <!-- Skeleton (shown while loading) -->
+      <section id="pdSkeleton" class="pd__grid">
+        <div class="pd__gallery pd__card">
+          <div class="pd__heroSkeleton"></div>
+          <div class="pd__thumbRow">
+            <div class="pd__thumbSkeleton"></div>
+            <div class="pd__thumbSkeleton"></div>
+            <div class="pd__thumbSkeleton"></div>
+            <div class="pd__thumbSkeleton"></div>
           </div>
         </div>
 
-        <div class="product__right">
-          <div class="glass product-card">
-            <div class="product-card__top">
-              <p id="category" class="meta"></p>
-              <h1 id="name" class="h1"></h1>
-              <p id="price" class="price"></p>
-            </div>
-
-            <p id="description" class="body"></p>
-
-            <div id="highlights" class="highlights"></div>
-
-            <div class="cta-row">
-              <button id="addToCart" class="btn btn--primary" type="button">Add to cart</button>
-              <button id="copyLink" class="btn btn--ghost" type="button">Copy link</button>
-            </div>
-
-            <p id="addedMsg" class="toast state--hidden" role="status" aria-live="polite">Added to cart</p>
+        <div class="pd__info pd__card">
+          <div class="pd__kickerSkeleton"></div>
+          <div class="pd__titleSkeleton"></div>
+          <div class="pd__priceSkeleton"></div>
+          <div class="pd__descSkeleton"></div>
+          <div class="pd__ctaRow">
+            <div class="pd__btnSkeleton"></div>
+            <div class="pd__btnSkeleton pd__btnSkeleton--ghost"></div>
           </div>
-
-          <div class="glass specs">
-            <h2 class="h2">Specs</h2>
-            <div id="specGrid" class="spec-grid"></div>
+          <div class="pd__metaRow">
+            <div class="pd__chipSkeleton"></div>
+            <div class="pd__chipSkeleton"></div>
+            <div class="pd__chipSkeleton"></div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ✅ Global toast (zelfde als op index/cart) -->
-    <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
+      <!-- Real content -->
+      <section id="pdContent" class="pd__grid" hidden>
+        <!-- Gallery -->
+        <div class="pd__gallery pd__card">
+          <div class="pd__hero">
+            <img id="pdHeroImg" class="pd__heroImg" alt="" />
+          </div>
+
+          <div id="pdThumbs" class="pd__thumbs" aria-label="Product afbeeldingen"></div>
+        </div>
+
+        <!-- Info -->
+        <div class="pd__info pd__card">
+          <div class="pd__kicker">Sport in a Box</div>
+          <h1 id="pdTitle" class="pd__title">—</h1>
+
+          <div class="pd__priceRow">
+            <div id="pdPrice" class="pd__price">—</div>
+            <div id="pdAvailability" class="pd__availability">Op voorraad</div>
+          </div>
+
+          <p id="pdDesc" class="pd__desc">—</p>
+
+          <div class="pd__ctaRow">
+            <button id="pdAddToCart" class="pd__btn pd__btn--primary" type="button">
+              Add to cart
+            </button>
+
+            <button id="pdCopyLink" class="pd__btn pd__btn--ghost" type="button">
+              Copy link
+            </button>
+          </div>
+
+          <div class="pd__metaRow">
+            <div class="pd__chip">
+              <div class="pd__chipTitle">Premium</div>
+              <div class="pd__chipText">High-end selectie</div>
+            </div>
+            <div class="pd__chip">
+              <div class="pd__chipTitle">Snel</div>
+              <div class="pd__chipText">Direct leverbaar</div>
+            </div>
+            <div class="pd__chip">
+              <div class="pd__chipTitle">Clean</div>
+              <div class="pd__chipText">Sport & hygiëne</div>
+            </div>
+          </div>
+
+          <div class="pd__divider"></div>
+
+          <!-- Accordion -->
+          <div class="pd__accordion">
+            <details open class="pd__details">
+              <summary class="pd__summary">Highlights</summary>
+              <ul id="pdHighlights" class="pd__list"></ul>
+            </details>
+
+            <details class="pd__details">
+              <summary class="pd__summary">Specificaties</summary>
+              <div id="pdSpecs" class="pd__specs"></div>
+            </details>
+
+            <details class="pd__details">
+              <summary class="pd__summary">Verzending & retour</summary>
+              <div class="pd__textBlock">
+                <p>Voor 22:00 besteld = morgen in huis (NL). Retour binnen 14 dagen.</p>
+                <p>Premium verpakt, zonder gedoe.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <!-- ✅ Je bestaande product script -->
-  <script src="./js/product-detail.js"></script>
+  <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    // year etc. (optional)
+  </script>
 </body>
 </html>
