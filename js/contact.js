@@ -4,7 +4,7 @@ const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 
 // Zet hier je WhatsApp nummer in international format, zonder + of spaties.
 // Voorbeeld NL mobiel: 31612345678
-const WHATSAPP_NUMBER = "31600000000";
+const WHATSAPP_NUMBER = "31638383737";
 
 function toast(text = "Done") {
   const el = document.getElementById("globalToast");
