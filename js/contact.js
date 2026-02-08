@@ -80,6 +80,16 @@ function initCounter() {
   update();
 }
 
+function nudgeError() {
+  const card = document.querySelector(".cp__card");
+  if (!card) return;
+  card.classList.remove("is-error");
+  // force reflow
+  void card.offsetWidth;
+  card.classList.add("is-error");
+  document.getElementById("formStatus")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 function initForm() {
   const form = document.getElementById("contactFormEl");
   const btn = document.getElementById("sendBtn");
@@ -104,10 +114,30 @@ function initForm() {
     const topic = (document.getElementById("topic")?.value || "").trim();
     const message = (document.getElementById("message")?.value || "").trim();
 
-    if (name.length < 2) return setStatus("Vul een geldige naam in.", "error");
-    if (!validateEmail(email)) return setStatus("Vul een geldig e-mailadres in.", "error");
-    if (!topic) return setStatus("Kies een onderwerp.", "error");
-    if (message.length < 10) return setStatus("Je bericht is te kort (min. 10 tekens).", "error");
+if (name.length < 2) {
+  setStatus("Vul een geldige naam in.", "error");
+  nudgeError();
+  return;
+}
+
+if (!validateEmail(email)) {
+  setStatus("Vul een geldig e-mailadres in.", "error");
+  nudgeError();
+  return;
+}
+
+if (!topic) {
+  setStatus("Kies een onderwerp.", "error");
+  nudgeError();
+  return;
+}
+
+if (message.length < 10) {
+  setStatus("Je bericht is te kort (min. 10 tekens).", "error");
+  nudgeError();
+  return;
+}
+
 
     setStatus("");
 btn.disabled = true;
