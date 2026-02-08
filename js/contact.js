@@ -4,7 +4,7 @@ const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 
 // Zet hier je WhatsApp nummer in international format, zonder + of spaties.
 // Voorbeeld NL mobiel: 31612345678
-const WHATSAPP_NUMBER = "31638383737";
+const WHATSAPP_NUMBER = "31655785445";
 
 function toast(text = "Done") {
   const el = document.getElementById("globalToast");
@@ -20,19 +20,23 @@ function buildWaLink(prefill) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
 }
 
-function setWaLinks() {
-  const prefill = "Hi! Ik heb een vraag over Sport in a Box.";
-  const link = buildWaLink(prefill);
-
+function setAllWaLinks(link) {
   const top = document.getElementById("cpWhatsAppTop");
   const side = document.getElementById("cpWhatsAppSide");
   const float = document.getElementById("waFloat");
-  const btn = document.getElementById("waBtn");
 
   if (top) top.href = link;
   if (side) side.href = link;
   if (float) float.href = link;
+}
 
+function setWaLinks() {
+  const prefill = "Hi! Ik heb een vraag over Sport in a Box.";
+  const link = buildWaLink(prefill);
+
+  setAllWaLinks(link);
+
+  const btn = document.getElementById("waBtn");
   if (btn) {
     btn.addEventListener("click", () => {
       window.open(link, "_blank", "noopener");
@@ -55,7 +59,7 @@ async function submitContact(payload) {
   const r = await fetch(`${API_BASE}/contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
@@ -69,7 +73,9 @@ function initCounter() {
   const ta = document.getElementById("message");
   const c = document.getElementById("msgCount");
   if (!ta || !c) return;
-  const update = () => { c.textContent = String(ta.value.length); };
+  const update = () => {
+    c.textContent = String(ta.value.length);
+  };
   ta.addEventListener("input", update);
   update();
 }
@@ -84,9 +90,11 @@ function initForm() {
 
     const company = (document.getElementById("company")?.value || "").trim();
     if (company) {
-      // Honeypot triggered
-      toast("Thanks!");
+      // Honeypot triggered (doen alsof het gelukt is)
+      toast("Dankjewel!");
+      setStatus("", "info");
       form.reset();
+      initCounter();
       return;
     }
 
@@ -101,10 +109,6 @@ function initForm() {
     if (!topic) return setStatus("Kies een onderwerp.", "error");
     if (message.length < 10) return setStatus("Je bericht is te kort (min. 10 tekens).", "error");
 
-    // Premium WhatsApp prefill includes topic + first line
-    const waPrefill = `Hi! Onderwerp: ${topic}. Naam: ${name}. ${message.slice(0, 160)}`;
-    const waLink = buildWaLink(waPrefill);
-
     setStatus("");
     btn.disabled = true;
     btn.textContent = "Versturen…";
@@ -115,9 +119,10 @@ function initForm() {
       toast("Bericht verstuurd");
       setStatus("Ontvangen. We reageren zo snel mogelijk.", "ok");
 
-      // Optional: also update WhatsApp links to include this message after submit
-      const float = document.getElementById("waFloat");
-      if (float) float.href = waLink;
+      // Update alle WhatsApp links met context na submit (premium touch)
+      const waPrefill = `Hi! Onderwerp: ${topic}. Naam: ${name}. ${message.slice(0, 200)}`;
+      const waLink = buildWaLink(waPrefill);
+      setAllWaLinks(waLink);
 
       form.reset();
       initCounter(); // reset counter
