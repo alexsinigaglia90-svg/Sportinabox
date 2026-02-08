@@ -119,8 +119,12 @@ function setText(id, txt) {
 function show(elId, yes) {
   const el = document.getElementById(elId);
   if (!el) return;
+
+  // Bulletproof: set both hidden + display
   el.hidden = !yes;
+  el.style.display = yes ? "" : "none";
 }
+
 
 function renderThumbs(images, onPick) {
   const thumbs = document.getElementById("pdThumbs");
