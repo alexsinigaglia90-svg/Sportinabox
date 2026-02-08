@@ -507,3 +507,10 @@ body{
 .btn-add-to-cart {
   opacity: 1 !important;
 }
+
+.btn-add-to-cart {
+  opacity: 1 !important;
+  color: #fff !important;
+  background: rgba(255,255,255,0.14) !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+}
