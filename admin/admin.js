@@ -239,7 +239,7 @@
     });
   }
 
- function renderImageGrid() {
+function renderImageGrid() {
   if (!imageGrid) return;
   imageGrid.innerHTML = "";
 
@@ -308,6 +308,7 @@
     imageGrid.appendChild(card);
   });
 }
+
 
 
     list.forEach((url, idx) => {
