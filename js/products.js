@@ -1,20 +1,47 @@
-// js/product.js — Ultra high-end product detail page
+// js/products.js — Sport in a Box (Shop grid)
+//
+// Fixes:
+// - Cloudflare Image Transformations "engine": /cdn-cgi/image/... (resize+crop+compress+format=auto)
+// - Always nice in frame: 4:3 crop + object-fit cover
+// - Remove "Configureer" button entirely
+// - Make Add to cart more visible
+//
+// IMPORTANT: Requires Cloudflare -> Image Transformations -> "Resize images from any origin" = ON
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
 
-// Use Worker image engine (no /cdn-cgi/image; avoids 9524/403)
+/** Build optimized image URL via Cloudflare Image Transformations */
 function cfImage(url, opts = {}) {
   if (!url) return "";
-  const { w = 1600, h = 1200, fit = "cover", q = 90 } = opts;
 
-  const u = new URL(`${API_BASE}/img`);
+  const { w = 1200, h = 900, fit = "cover", q = 85 } = opts;
+
+  const u = new URL("https://sportinabox-api.alex-sinigaglia90.workers.dev/img");
   u.searchParams.set("src", url);
   u.searchParams.set("w", String(w));
   u.searchParams.set("h", String(h));
   u.searchParams.set("fit", fit);
   u.searchParams.set("q", String(q));
+
   return u.toString();
+}
+
+
+async function fetchProducts() {
+  const r = await fetch(`${API_BASE}/products`, { headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error("Products API failed");
+  const data = await r.json();
+  return data.results || [];
+}
+
+function euro(cents, currency = "EUR") {
+  const n = Number(cents || 0) / 100;
+  try {
+    return new Intl.NumberFormat("nl-NL", { style: "currency", currency }).format(n);
+  } catch {
+    return `${n.toFixed(2)} ${currency}`;
+  }
 }
 
 function esc(s) {
@@ -42,28 +69,6 @@ function normalizeImageList(imagesJsonOrArray) {
   return arr.map((x) => (typeof x === "string" ? x.trim() : "")).filter(Boolean);
 }
 
-function euro(cents, currency = "EUR") {
-  const n = Number(cents || 0) / 100;
-  try {
-    return new Intl.NumberFormat("nl-NL", { style: "currency", currency }).format(n);
-  } catch {
-    return `${n.toFixed(2)} ${currency}`;
-  }
-}
-
-function getSlug() {
-  const url = new URL(window.location.href);
-  return (url.searchParams.get("slug") || "").trim();
-}
-
-async function fetchProduct(slug) {
-  const r = await fetch(`${API_BASE}/products/${encodeURIComponent(slug)}`, {
-    headers: { Accept: "application/json" }
-  });
-  if (!r.ok) return null;
-  return await r.json();
-}
-
 function readCart() {
   try {
     const raw = localStorage.getItem(CART_KEY);
@@ -77,19 +82,28 @@ function readCart() {
 
 function writeCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  if (typeof window.updateCartBadge === "function") window.updateCartBadge();
+  updateCartBadge();
 }
 
-function toast(text = "Added to cart") {
-  const el = document.getElementById("globalToast");
-  if (!el) return;
-  el.textContent = text;
-  el.classList.add("is-visible");
-  window.clearTimeout(toast._t);
-  toast._t = window.setTimeout(() => el.classList.remove("is-visible"), 1200);
+function updateCartBadge() {
+  const badge = document.getElementById("cartBadge");
+  if (!badge) return;
+
+  const cart = readCart();
+  const qty = cart.items.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
+  if (qty > 0) {
+    badge.textContent = String(qty);
+    badge.style.display = "inline-flex";
+    badge.setAttribute("aria-hidden", "false");
+  } else {
+    badge.textContent = "";
+    badge.style.display = "none";
+    badge.setAttribute("aria-hidden", "true");
+  }
 }
 
-function addToCart(p) {
+function addToCartFromProduct(p) {
   const cart = readCart();
   const images = normalizeImageList(p.images_json ?? p.images);
   const existing = cart.items.find((it) => it.id === p.id);
@@ -111,161 +125,122 @@ function addToCart(p) {
   writeCart(cart);
 }
 
-function setText(id, txt) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = txt ?? "";
-}
-
-function show(elId, yes) {
-  const el = document.getElementById(elId);
+function toast(text = "Added to cart") {
+  const el = document.getElementById("globalToast");
   if (!el) return;
-  el.hidden = !yes;
+
+  el.textContent = text;
+  el.classList.add("is-visible");
+
+  window.clearTimeout(toast._t);
+  toast._t = window.setTimeout(() => el.classList.remove("is-visible"), 1200);
 }
 
-function renderThumbs(images, onPick) {
-  const thumbs = document.getElementById("pdThumbs");
-  if (!thumbs) return;
-  thumbs.innerHTML = "";
-
-  images.forEach((rawUrl, idx) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "pd__thumb";
-    btn.setAttribute("aria-label", `Afbeelding ${idx + 1}`);
-    btn.innerHTML = `<img class="pd__thumbImg" alt="" src="${esc(cfImage(rawUrl, { w: 320, h: 240, q: 85 }))}">`;
-    btn.addEventListener("click", () => onPick(idx));
-    thumbs.appendChild(btn);
-  });
+function productHref(slug) {
+  return `./product.html?slug=${encodeURIComponent(slug)}`;
 }
 
-function setActiveThumb(index) {
-  const thumbs = Array.from(document.querySelectorAll(".pd__thumb"));
-  thumbs.forEach((t, i) => t.classList.toggle("is-active", i === index));
-}
-
-function renderSpecs(p) {
-  const specs = document.getElementById("pdSpecs");
-  if (!specs) return;
-
-  // Minimal but premium: show what you have, without looking “empty”.
-  const rows = [];
-  rows.push(["Merk", "Sport in a Box"]);
-  if (p.sku) rows.push(["SKU", String(p.sku)]);
-  rows.push(["Status", String(p.status || "published")]);
-  rows.push(["Prijs", euro(p.price_cents, p.currency || "EUR")]);
-
-  specs.innerHTML = rows.map(([k, v]) => `
-    <div class="pd__specRow">
-      <div class="pd__specKey">${esc(k)}</div>
-      <div class="pd__specVal">${esc(v)}</div>
-    </div>
-  `).join("");
-}
-
-function renderHighlights(p) {
-  const ul = document.getElementById("pdHighlights");
-  if (!ul) return;
-
-  // If you don’t have highlights in DB yet, we generate tasteful defaults from description.
-  const items = [];
-
-  const desc = (p.description || "").trim();
-  if (desc) items.push("Premium formule voor dagelijks gebruik");
-  items.push("Consistente prestaties — ontworpen voor sport & hygiëne");
-  items.push("Strakke verpakking, direct leverbaar");
-
-  ul.innerHTML = items.map((x) => `<li>${esc(x)}</li>`).join("");
-}
-
-async function init() {
-  const slug = getSlug();
-  if (!slug) {
-    show("pdSkeleton", false);
-    show("pdContent", false);
-    show("pdNotFound", true);
-    return;
-  }
-
-  // Always hide "not found" until we really know
-  show("pdNotFound", false);
-  show("pdSkeleton", true);
-  show("pdContent", false);
-
-  const p = await fetchProduct(slug);
-
-  if (!p || p.error) {
-    show("pdSkeleton", false);
-    show("pdContent", false);
-    show("pdNotFound", true);
-    return;
-  }
-
-  // If your API returns only published to public endpoints, this is fine.
-  // If not: enforce UX here
-  if (p.status && String(p.status) !== "published") {
-    show("pdSkeleton", false);
-    show("pdContent", false);
-    show("pdNotFound", true);
-    return;
-  }
-
-  // Populate
-  setText("pdCrumbName", p.name || "Product");
-  setText("pdTitle", p.name || "—");
-  setText("pdPrice", euro(p.price_cents, p.currency || "EUR"));
-  setText("pdDesc", p.description || "");
-
-  // Title
-  document.title = `${p.name || "Product"} — Sport in a Box`;
-
+function card(p) {
   const images = normalizeImageList(p.images_json ?? p.images);
-  const hero = document.getElementById("pdHeroImg");
+  const raw = images.length ? images[0] : "";
+  const href = productHref(p.slug);
 
-  let activeIndex = 0;
-  function setHero(idx) {
-    activeIndex = idx;
-    if (!hero) return;
-    const raw = images[idx] || images[0] || "";
-    hero.src = raw ? cfImage(raw, { w: 1600, h: 1200, q: 90, fit: "cover" }) : "";
-    hero.alt = p.name || "";
-    setActiveThumb(idx);
-  }
+  // ✅ OPTIMIZED card image (4:3 cover)
+  const img = raw ? cfImage(raw, { w: 1200, h: 900, fit: "cover", q: 85, format: "auto" }) : "";
 
-  if (images.length) {
-    renderThumbs(images, setHero);
-    setHero(0);
-  } else if (hero) {
-    hero.remove();
-  }
+  return `
+  <article class="product-card" data-slug="${esc(p.slug)}" role="link" tabindex="0" aria-label="${esc(p.name)}">
+    <div class="product-card__media">
+      ${
+        img
+          ? `<img class="product-card__img" src="${esc(img)}" alt="${esc(p.name)}" loading="lazy" />`
+          : `<div class="media-fallback">Sportinabox</div>`
+      }
+    </div>
 
-  renderHighlights(p);
-  renderSpecs(p);
+    <div class="product-body">
+      <div class="product-top">
+        <h3 class="product-title">${esc(p.name)}</h3>
+        <div class="product-price">${euro(p.price_cents, p.currency || "EUR")}</div>
+      </div>
 
-  // CTA
-  const btnAdd = document.getElementById("pdAddToCart");
-  if (btnAdd) {
-    btnAdd.addEventListener("click", () => {
-      addToCart(p);
-      toast("Added to cart");
-    });
-  }
+      <p class="product-desc">${esc((p.description || "").slice(0, 110))}</p>
 
-  const btnCopy = document.getElementById("pdCopyLink");
-  if (btnCopy) {
-    btnCopy.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        toast("Link copied");
-      } catch {
-        toast("Copy failed");
+      <div class="product-actions">
+        <!-- ✅ Configureer removed -->
+        <button class="btn btn-ghost btn-add-to-cart" type="button" data-add="${esc(p.slug)}" data-action="add">
+          Add to cart
+        </button>
+      </div>
+    </div>
+
+    <a class="sr-only" href="${href}">Open ${esc(p.name)}</a>
+  </article>`;
+}
+
+async function mountProducts() {
+  const grid = document.querySelector("[data-products-grid]");
+  const state = document.querySelector("[data-products-state]");
+  if (!grid || !state) return;
+
+  updateCartBadge();
+  state.textContent = "Laden…";
+
+  try {
+    const products = await fetchProducts();
+    if (!products.length) {
+      state.textContent = "Nog geen producten (public). Voeg in Admin een product toe en zet status op published.";
+      return;
+    }
+
+    grid.innerHTML = products.map(card).join("");
+    state.textContent = `${products.length} producten`;
+
+    grid.addEventListener("click", (e) => {
+      const addBtn = e.target.closest("button[data-add]");
+      if (addBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const slug = addBtn.getAttribute("data-add");
+        const p = products.find((x) => x.slug === slug);
+        if (!p) return;
+
+        addToCartFromProduct(p);
+        toast("Added to cart");
+        return;
+      }
+
+      const cardEl = e.target.closest(".product-card[data-slug]");
+      if (cardEl) {
+        const interactive = e.target.closest("button, a, input, textarea, select, label");
+        if (interactive) return;
+
+        const slug = cardEl.getAttribute("data-slug");
+        if (slug) window.location.href = productHref(slug);
       }
     });
-  }
 
-  // Show content
-  show("pdSkeleton", false);
-  show("pdContent", true);
+    grid.addEventListener("keydown", (e) => {
+      const cardEl = e.target.closest(".product-card[data-slug]");
+      if (!cardEl) return;
+
+      if (e.key === "Enter" || e.key === " ") {
+        const slug = cardEl.getAttribute("data-slug");
+        if (!slug) return;
+
+        const tag = (e.target.tagName || "").toLowerCase();
+        if (["button", "a", "input", "textarea", "select"].includes(tag)) return;
+
+        e.preventDefault();
+        window.location.href = productHref(slug);
+      }
+    });
+
+  } catch (e) {
+    state.textContent = "Kon producten niet laden. Check API /products.";
+    console.error(e);
+  }
 }
 
-document.addEventListener("DOMContentLoaded", init);
-
+document.addEventListener("DOMContentLoaded", mountProducts);
