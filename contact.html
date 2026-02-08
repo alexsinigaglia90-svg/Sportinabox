@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Contact — Sport in a Box</title>
+  <meta name="description" content="Neem contact op met Sport in a Box via WhatsApp of ons premium contactformulier." />
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <script defer src="./js/contact.js"></script>
+  <script defer src="./js/cart-badge.js"></script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box home">
+        <span class="brand__text">Sport in a Box</span>
+      </a>
+
+      <nav class="nav" aria-label="Hoofdnavigatie">
+        <a class="nav__link" href="./index.html">Home</a>
+        <a class="nav__link" href="./hygiene.html">Hygiëne</a>
+        <a class="nav__link" href="./about.html">Over ons</a>
+        <a class="nav__link is-active" href="./contact.html">Contact</a>
+        <a class="nav__link" href="./cart.html">
+          Cart <span id="cartBadge" class="badge" aria-hidden="true"></span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="cp">
+    <div class="container">
+
+      <section class="cp__hero">
+        <div class="cp__heroInner">
+          <div class="cp__kicker">Sport in a Box</div>
+          <h1 class="cp__title">Contact</h1>
+          <p class="cp__subtitle">
+            Snel en premium. WhatsApp voor direct contact, of laat een bericht achter — wij reageren vlot.
+          </p>
+
+          <div class="cp__quick">
+            <a id="cpWhatsAppTop" class="cp__quickBtn cp__quickBtn--primary" href="#" target="_blank" rel="noopener">
+              WhatsApp
+            </a>
+            <a class="cp__quickBtn cp__quickBtn--ghost" href="#contactForm">
+              Stuur bericht
+            </a>
+          </div>
+        </div>
+
+        <div class="cp__heroCard">
+          <div class="cp__heroCardTop">
+            <div class="cp__heroBadge">High-end support</div>
+            <div class="cp__heroMeta">Ma–Za • 09:00–21:00</div>
+          </div>
+
+          <div class="cp__heroCardGrid">
+            <div class="cp__stat">
+              <div class="cp__statVal">Snel</div>
+              <div class="cp__statLbl">Reactie</div>
+            </div>
+            <div class="cp__stat">
+              <div class="cp__statVal">Premium</div>
+              <div class="cp__statLbl">Service</div>
+            </div>
+            <div class="cp__stat">
+              <div class="cp__statVal">Clean</div>
+              <div class="cp__statLbl">Communicatie</div>
+            </div>
+          </div>
+
+          <div class="cp__heroNote">
+            Tip: voeg je ordernummer toe voor de snelste afhandeling.
+          </div>
+        </div>
+      </section>
+
+      <section class="cp__grid">
+        <!-- Left: form -->
+        <div class="cp__card">
+          <div class="cp__cardHead" id="contactForm">
+            <h2 class="cp__h2">Stuur ons een bericht</h2>
+            <p class="cp__p">High-end formulier met snelle verwerking. Geen gedoe.</p>
+          </div>
+
+          <form id="contactFormEl" class="cp__form" autocomplete="on">
+            <!-- Honeypot (anti-spam) -->
+            <div class="cp__hp" aria-hidden="true">
+              <label>Company</label>
+              <input id="company" name="company" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div class="cp__row">
+              <div class="cp__field">
+                <label class="cp__label" for="name">Naam</label>
+                <input class="cp__input" id="name" name="name" type="text" placeholder="Je naam" required minlength="2" />
+              </div>
+
+              <div class="cp__field">
+                <label class="cp__label" for="email">E-mail</label>
+                <input class="cp__input" id="email" name="email" type="email" placeholder="naam@bedrijf.nl" required />
+              </div>
+            </div>
+
+            <div class="cp__row">
+              <div class="cp__field">
+                <label class="cp__label" for="phone">Telefoon (optioneel)</label>
+                <input class="cp__input" id="phone" name="phone" type="tel" placeholder="+31 6 …" />
+              </div>
+
+              <div class="cp__field">
+                <label class="cp__label" for="topic">Onderwerp</label>
+                <select class="cp__select" id="topic" name="topic" required>
+                  <option value="" selected disabled>Kies een onderwerp</option>
+                  <option value="order">Order / levering</option>
+                  <option value="product">Productvraag</option>
+                  <option value="retour">Retour / garantie</option>
+                  <option value="business">Zakelijk</option>
+                  <option value="other">Overig</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="cp__field">
+              <div class="cp__labelRow">
+                <label class="cp__label" for="message">Bericht</label>
+                <div class="cp__count"><span id="msgCount">0</span>/800</div>
+              </div>
+              <textarea class="cp__textarea" id="message" name="message" rows="6"
+                placeholder="Schrijf je bericht… (voeg evt. ordernummer toe)"
+                required maxlength="800"></textarea>
+              <div class="cp__hint">We gebruiken je gegevens alleen om te reageren op je bericht.</div>
+            </div>
+
+            <div class="cp__actions">
+              <button id="sendBtn" class="cp__btn cp__btn--primary" type="submit">
+                Verstuur bericht
+              </button>
+              <button id="waBtn" class="cp__btn cp__btn--ghost" type="button">
+                Liever WhatsApp
+              </button>
+            </div>
+
+            <div id="formStatus" class="cp__status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <!-- Right: contact / trust -->
+        <aside class="cp__card cp__side">
+          <h2 class="cp__h2">Direct contact</h2>
+          <p class="cp__p">Voor snelle vragen is WhatsApp het snelst.</p>
+
+          <div class="cp__sideBlock">
+            <div class="cp__sideLabel">WhatsApp</div>
+            <a id="cpWhatsAppSide" class="cp__sideLink" href="#" target="_blank" rel="noopener">Open chat</a>
+            <div class="cp__sideMeta">Gemiddeld snelle reactie</div>
+          </div>
+
+          <div class="cp__divider"></div>
+
+          <div class="cp__sideBlock">
+            <div class="cp__sideLabel">E-mail</div>
+            <div class="cp__sideMeta">We reageren op het mailadres dat je invult in het formulier.</div>
+          </div>
+
+          <div class="cp__divider"></div>
+
+          <div class="cp__sideBlock">
+            <div class="cp__sideLabel">Zakelijk</div>
+            <div class="cp__sideMeta">Voor partnerships: kies “Zakelijk” als onderwerp.</div>
+          </div>
+
+          <div class="cp__divider"></div>
+
+          <div class="cp__fineprint">
+            Door contact op te nemen ga je akkoord met het verwerken van je gegevens voor support.
+          </div>
+        </aside>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Floating WhatsApp -->
+  <a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener" aria-label="WhatsApp openen">
+    <span class="wa-float__dot"></span>
+    <span class="wa-float__text">WhatsApp</span>
+  </a>
+
+  <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
