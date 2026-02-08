@@ -1217,3 +1217,117 @@ body{
   letter-spacing: -0.01em;
 }
 
+/* =========================
+   Micro-interactions (Apple-ish)
+   Contact page + shared polish
+   ========================= */
+
+/* 1) Smooth typography rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 2) Motion safety */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* 3) Premium focus ring */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(160, 210, 255, 0.18),
+    0 0 0 1px rgba(255,255,255,0.22) inset;
+  border-color: rgba(255,255,255,0.28) !important;
+}
+
+/* 4) Buttons: hover/press micro-interaction */
+.cp__btn, .cp__quickBtn, .wa-float {
+  transform: translateY(0);
+  will-change: transform;
+}
+
+.cp__btn:hover, .cp__quickBtn:hover, .wa-float:hover {
+  transform: translateY(-1px);
+}
+
+.cp__btn:active, .cp__quickBtn:active, .wa-float:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+/* 5) Inputs: ultra subtle lift on hover */
+.cp__input, .cp__select, .cp__textarea {
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.cp__input:hover, .cp__select:hover, .cp__textarea:hover {
+  transform: translateY(-0.5px);
+  border-color: rgba(255,255,255,0.18);
+}
+
+/* 6) Card hover: soft elevation */
+.cp__card {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.cp__card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: 0 26px 70px rgba(0,0,0,0.48);
+}
+
+/* 7) CTA shimmer (optional): add class .is-loading to button */
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+.cp__btn.is-loading {
+  cursor: wait;
+  opacity: 0.92;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.06),
+    rgba(255,255,255,0.10)
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.0s linear infinite;
+}
+
+/* 8) Status text transitions */
+.cp__status {
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.cp__status:empty {
+  opacity: 0;
+  transform: translateY(-2px);
+}
+
+/* 9) Toast: premium slide/fade */
+.global-toast {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.global-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 10) WhatsApp float: tiny pulse dot for “alive” feel */
+@keyframes pulseDot {
+  0% { transform: scale(1); opacity: 0.95; }
+  60% { transform: scale(1.18); opacity: 0.75; }
+  100% { transform: scale(1); opacity: 0.95; }
+}
+
+.wa-float__dot {
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
