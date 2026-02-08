@@ -15,12 +15,18 @@ const CART_KEY = "sib_cart_v1";
 function cfImage(url, opts = {}) {
   if (!url) return "";
 
-  const { w = 1200, h = 900, fit = "cover", q = 85, format = "auto" } = opts;
-  const params = `w=${w},h=${h},fit=${fit},quality=${q},format=${format}`;
+  const { w = 1200, h = 900, fit = "cover", q = 85 } = opts;
 
-  // Must go through your own domain so /cdn-cgi/image works
-  return `${location.origin}/cdn-cgi/image/${params}/${url}`;
+  const u = new URL("https://sportinabox-api.alex-sinigaglia90.workers.dev/img");
+  u.searchParams.set("src", url);
+  u.searchParams.set("w", String(w));
+  u.searchParams.set("h", String(h));
+  u.searchParams.set("fit", fit);
+  u.searchParams.set("q", String(q));
+
+  return u.toString();
 }
+
 
 async function fetchProducts() {
   const r = await fetch(`${API_BASE}/products`, { headers: { Accept: "application/json" } });
