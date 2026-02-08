@@ -487,3 +487,23 @@ body{
 }
 
 .small { font-size: 12.5px; }
+
+.product-card__media {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.06);
+}
+
+.product-card__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.btn-add-to-cart {
+  opacity: 1 !important;
+}
