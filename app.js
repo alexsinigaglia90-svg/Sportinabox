@@ -1,30 +1,46 @@
+// app.js
+
+// Year in footer (safe)
 document.getElementById("year")?.textContent = new Date().getFullYear();
 
-document.querySelectorAll('a[href^="#"]').forEach(link => {
-  link.addEventListener("click", e => {
-    const target = document.querySelector(link.getAttribute("href"));
+// Smooth scroll for in-page anchors
+document.querySelectorAll('a[href^="#"]').forEach((link) => {
+  link.addEventListener("click", (e) => {
+    const href = link.getAttribute("href");
+    if (!href || href === "#") return;
+
+    const target = document.querySelector(href);
     if (!target) return;
+
     e.preventDefault();
     target.scrollIntoView({ behavior: "smooth" });
+  });
+});
 
-/* PLAK DIT IN app.js (helemaal onderaan). Dit maakt direct een “AI-achtige” zoek (scoring) op jouw live producten.
-   Vereiste: index.html moet products.js laden vóór app.js, zodat window.SIB bestaat.
+/* Hero AI-style search (scoring on live catalog from products.js)
+   Requires: products.js loaded before app.js (window.SIB.getCatalogForAI)
 */
 (function () {
   function euroFromCents(cents, currency = "EUR") {
     const n = Number(cents || 0) / 100;
-    try { return new Intl.NumberFormat("nl-NL", { style: "currency", currency }).format(n); }
-    catch { return `${n.toFixed(2)} ${currency}`; }
+    try {
+      return new Intl.NumberFormat("nl-NL", { style: "currency", currency }).format(n);
+    } catch {
+      return `${n.toFixed(2)} ${currency}`;
+    }
   }
 
   function esc(s) {
     return String(s ?? "").replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
     }[m]));
   }
 
   function extractMaxPriceEUR(q) {
-    // match: "onder €50", "€ 50", "max 50", "under 50"
     const m1 = q.match(/(?:onder|max|under)\s*€?\s*(\d+(?:[.,]\d+)?)/i);
     const m2 = q.match(/€\s*(\d+(?:[.,]\d+)?)/i);
     const raw = (m1?.[1] || m2?.[1] || "").replace(",", ".");
@@ -44,20 +60,17 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     const hay = `${p.name} ${p.description || ""}`.toLowerCase();
     let score = 0;
 
-    // token matches
     for (const t of tokens) {
       if (t.length < 2) continue;
       if (hay.includes(t)) score += 12;
     }
 
-    // price preference
     if (maxPrice != null) {
       const eur = (Number(p.price_cents || 0) / 100);
       if (eur <= maxPrice) score += 18;
       else score -= Math.min(25, Math.round((eur - maxPrice) * 2));
     }
 
-    // slight boost if query looks like hygiene/sport and matches
     if (tokens.includes("hygiëne") || tokens.includes("hygiene") || tokens.includes("spray") || tokens.includes("desinfect")) {
       if (hay.includes("hygiëne") || hay.includes("hygiene") || hay.includes("spray") || hay.includes("desinfect")) score += 10;
     }
@@ -93,13 +106,10 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
         const maxPrice = extractMaxPriceEUR(query);
 
         const ranked = catalog
-          .map(p => {
-            const s = scoreProduct(p, tokens, maxPrice);
-            return { p, s };
-          })
+          .map((p) => ({ p, s: scoreProduct(p, tokens, maxPrice) }))
           .sort((a, b) => b.s - a.s)
           .slice(0, 6)
-          .filter(x => x.s > 0);
+          .filter((x) => x.s > 0);
 
         if (!ranked.length) {
           status.textContent = `Geen sterke matches voor: "${query}". Probeer iets specifieker.`;
@@ -107,11 +117,11 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
         }
 
         status.textContent = `Top suggesties voor: "${query}"`;
-        resultsEl.innerHTML = ranked.map(({ p, s }) => {
+        resultsEl.innerHTML = ranked.map(({ p }) => {
           const href = `./product.html?slug=${encodeURIComponent(p.slug)}`;
           const price = euroFromCents(p.price_cents, p.currency || "EUR");
           const reason = maxPrice != null
-            ? (Number(p.price_cents || 0) / 100 <= maxPrice ? `Binnen jouw budget (≤ €${maxPrice}).` : `Lijkt relevant op basis van je omschrijving.`)
+            ? ((Number(p.price_cents || 0) / 100) <= maxPrice ? `Binnen jouw budget (≤ €${maxPrice}).` : `Lijkt relevant op basis van je omschrijving.`)
             : `Lijkt relevant op basis van je omschrijving.`;
 
           return `
@@ -125,7 +135,6 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
             </a>
           `;
         }).join("");
-
       } catch (e) {
         console.error(e);
         status.textContent = "Zoeken mislukt. Probeer opnieuw.";
@@ -140,7 +149,3 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 
   document.addEventListener("DOMContentLoaded", runHeroSearch);
 })();
-
-    
-  });
-});
