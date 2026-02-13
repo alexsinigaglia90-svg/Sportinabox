@@ -1,61 +1,49 @@
-// js/products.js — Sport in a Box (Shop grid)
+// js/products.js — Sport in a Box (Shop grid + Premium Image Engine)
 //
-// Fixes:
-// - Cloudflare Image Transformations "engine": /cdn-cgi/image/... (resize+crop+compress+format=auto)
-// - Always nice in frame: 4:3 crop + object-fit cover
-// - Remove "Configureer" button entirely
-// - Make Add to cart more visible
+// Includes:
+// - Cloudflare Worker image presets:
+//     /img/cover   (grid/cards)  -> always consistent 4:3 cover
+//     /img/contain (detail/hero) -> full product in frame (used elsewhere)
+// - Cart add + badge update
+// - Toast feedback
+// - Exposes window.SIB.getCatalogForAI() for your hero search (app.js)
 //
-// IMPORTANT: Requires Cloudflare -> Image Transformations -> "Resize images from any origin" = ON
+// IMPORTANT:
+// - Your Worker must support:  GET {API_BASE}/img/cover?src=...
+// - index.html must load products.js BEFORE app.js
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
 
-/** Build optimized image URL via Cloudflare Image Transformations */
+/** Build optimized image URL via your Worker presets */
 function cfImage(url, opts = {}) {
   if (!url) return "";
 
-  // ✅ Added "format" support (your code already calls format:"auto")
-  const { w = 1200, h = 900, fit = "cover", q = 85, format = "auto" } = opts;
+  const {
+    preset = "cover", // "cover" | "contain"
+    w,
+    h,
+    q,
+    dpr
+  } = opts;
 
-  const u = new URL("https://sportinabox-api.alex-sinigaglia90.workers.dev/img");
+  const endpoint = preset === "contain" ? "/img/contain" : "/img/cover";
+  const u = new URL(API_BASE + endpoint);
+
   u.searchParams.set("src", url);
-  u.searchParams.set("w", String(w));
-  u.searchParams.set("h", String(h));
-  u.searchParams.set("fit", fit);
-  u.searchParams.set("q", String(q));
-  u.searchParams.set("format", format);
+  if (w) u.searchParams.set("w", String(w));
+  if (h) u.searchParams.set("h", String(h));
+  if (q) u.searchParams.set("q", String(q));
+  if (dpr) u.searchParams.set("dpr", String(dpr));
 
   return u.toString();
 }
 
-// -----------------------------------------
-// ✅ NEW: simple in-memory cache for products
-// -----------------------------------------
-let _productsCache = null;
-let _productsCacheAt = 0;
-
-/**
- * Fetch products from API with cache.
- * @param {Object} opts
- * @param {boolean} opts.forceRefresh - bypass cache
- * @param {number} opts.maxAgeMs - cache TTL
- */
-async function fetchProducts({ forceRefresh = false, maxAgeMs = 60_000 } = {}) {
-  const now = Date.now();
-  if (!forceRefresh && _productsCache && (now - _productsCacheAt) < maxAgeMs) {
-    return _productsCache;
-  }
-
+async function fetchProducts() {
   const r = await fetch(`${API_BASE}/products`, { headers: { Accept: "application/json" } });
   if (!r.ok) throw new Error("Products API failed");
   const data = await r.json();
-
-  const results = data.results || [];
-  _productsCache = results;
-  _productsCacheAt = now;
-
-  return results;
+  return data.results || [];
 }
 
 function euro(cents, currency = "EUR") {
@@ -168,8 +156,8 @@ function card(p) {
   const raw = images.length ? images[0] : "";
   const href = productHref(p.slug);
 
-  // ✅ OPTIMIZED card image (4:3 cover)
-  const img = raw ? cfImage(raw, { w: 1200, h: 900, fit: "cover", q: 85, format: "auto" }) : "";
+  // ✅ PREMIUM: always uniform 4:3 cover via Worker preset
+  const img = raw ? cfImage(raw, { preset: "cover" }) : "";
 
   return `
   <article class="product-card" data-slug="${esc(p.slug)}" role="link" tabindex="0" aria-label="${esc(p.name)}">
@@ -190,7 +178,6 @@ function card(p) {
       <p class="product-desc">${esc((p.description || "").slice(0, 110))}</p>
 
       <div class="product-actions">
-        <!-- ✅ Configureer removed -->
         <button class="btn btn-ghost btn-add-to-cart" type="button" data-add="${esc(p.slug)}" data-action="add">
           Add to cart
         </button>
@@ -204,13 +191,18 @@ function card(p) {
 async function mountProducts() {
   const grid = document.querySelector("[data-products-grid]");
   const state = document.querySelector("[data-products-state]");
-  if (!grid || !state) return;
 
+  // Page might not be the shop grid (e.g. other pages)
   updateCartBadge();
-  state.textContent = "Laden…";
 
   try {
-    const products = await fetchProducts();
+    // Always preload products so AI search can work even if no grid exists
+    const products = await window.SIB.getCatalogForAI();
+
+    if (!grid || !state) return;
+
+    state.textContent = "Laden…";
+
     if (!products.length) {
       state.textContent = "Nog geen producten (public). Voeg in Admin een product toe en zet status op published.";
       return;
@@ -259,36 +251,58 @@ async function mountProducts() {
         window.location.href = productHref(slug);
       }
     });
-
   } catch (e) {
-    state.textContent = "Kon producten niet laden. Check API /products.";
+    if (state) state.textContent = "Kon producten niet laden. Check API /products.";
     console.error(e);
   }
 }
 
+/* =========================
+   window.SIB API (used by app.js search)
+   ========================= */
+(function exposeSIB() {
+  const cache = { products: null, t: 0 };
+
+  async function getCatalogForAI() {
+    // Cache for 2 minutes to keep UX snappy (and reduce API hits)
+    const now = Date.now();
+    if (cache.products && (now - cache.t) < 120000) return cache.products;
+
+    const products = await fetchProducts();
+
+    // Normalize to a consistent shape for app.js
+    const normalized = products.map((p) => {
+      const images = normalizeImageList(p.images_json ?? p.images);
+      const raw = images[0] || "";
+
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        description: p.description || "",
+        price_cents: p.price_cents,
+        currency: p.currency || "EUR",
+
+        // IMPORTANT:
+        // Provide a ready-to-use image URL for the hero search cards.
+        // Use cover preset (small cards). (Detail page will use contain separately.)
+        image: raw ? cfImage(raw, { preset: "cover" }) : "",
+
+        // Keep raw list too (handy for product.html later)
+        images_raw: images
+      };
+    });
+
+    cache.products = normalized;
+    cache.t = now;
+    return normalized;
+  }
+
+  // Attach to window
+  window.SIB = window.SIB || {};
+  window.SIB.getCatalogForAI = getCatalogForAI;
+  window.SIB.cfImage = cfImage; // handy for other pages (product detail)
+})();
+
 document.addEventListener("DOMContentLoaded", mountProducts);
 
-// -------------------------------------------------------------------
-// ✅ NEW: expose product access for homepage AI-search / recommendations
-// -------------------------------------------------------------------
-window.SIB = window.SIB || {};
-window.SIB.API_BASE = API_BASE;
-window.SIB.getProducts = fetchProducts;
-
-// AI-friendly catalog projection (small & stable schema)
-// (This is what your future chatbot/search will consume)
-window.SIB.getCatalogForAI = async function (opts = {}) {
-  const products = await fetchProducts(opts);
-  return products.map((p) => {
-    const images = normalizeImageList(p.images_json ?? p.images);
-    return {
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      description: p.description || "",
-      price_cents: p.price_cents,
-      currency: p.currency || "EUR",
-      image: images[0] || ""
-    };
-  });
-};
