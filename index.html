@@ -1,27 +1,25 @@
 <!doctype html>
 <html lang="nl">
-
-  
-  
-  <head>
+<head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sport in a Box</title>
   <meta name="description" content="Premium sport- en hygiëneproducten met een slimme configurator." />
 
   <link rel="stylesheet" href="./styles.css" />
-  <script defer src="./js/products.js"></script>
-    <script defer src="./js/cart-badge.js"></script>
 
+  <!-- Load shared logic early (defer = after HTML parse) -->
+  <script defer src="./js/products.js"></script>
+  <script defer src="./js/cart-badge.js"></script>
+  <script defer src="./app.js"></script>
 </head>
- 
+
 <body>
 
   <!-- Top navigation -->
   <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="./index.html" aria-label="Sport in a Box home">
-        <!-- Als je een logo hebt: zet 'm in assets/img/logo.svg -->
         <!-- <img class="brand__logo" src="./assets/img/logo.svg" alt="Sport in a Box"> -->
         <span class="brand__text">Sport in a Box</span>
       </a>
@@ -32,15 +30,14 @@
         <a class="nav__link" href="./about.html">Over ons</a>
         <a class="nav__link" href="./contact.html">Contact</a>
         <a class="nav__link" href="./cart.html">
-  Cart <span id="cartBadge" class="badge" aria-hidden="true"></span>
-</a>
-
+          Cart <span id="cartBadge" class="badge" aria-hidden="true"></span>
+        </a>
       </nav>
     </div>
   </header>
 
   <main>
-    <!-- Compact hero (Zilveren Naald style) -->
+    <!-- Compact hero -->
     <section class="hero hero--compact">
       <div class="hero__media" aria-hidden="true">
         <video class="hero__video" autoplay muted loop playsinline preload="metadata">
@@ -65,28 +62,27 @@
           <a class="btn btn--primary" href="./hygiene.html">Start configurator</a>
           <a class="btn btn--ghost" href="#shop">Bekijk producten</a>
         </div>
+
+        <!-- AI-style Search (positioned where your red block was) -->
+        <section class="hero-search" aria-label="AI product search">
+          <div class="hero-search__bar">
+            <span class="hero-search__icon" aria-hidden="true">⌕</span>
+            <input
+              id="heroSearchInput"
+              class="hero-search__input"
+              type="text"
+              placeholder="Beschrijf wat je zoekt… (bv. ‘handschoenen maat M’, ‘hygiëne spray’, ‘Nike onder €50’)"
+              autocomplete="off"
+            />
+            <button id="heroSearchBtn" class="hero-search__btn" type="button">Zoek</button>
+          </div>
+
+          <div id="heroSearchStatus" class="hero-search__status"></div>
+          <div id="heroSearchResults" class="hero-search__results"></div>
+        </section>
       </div>
     </section>
 
-<!-- PLAK DIT OP INDEX.HTML PRECIES OP DE PLEK VAN JE RODE VLAK (onder de knoppen in je hero) -->
-<section class="hero-search" aria-label="AI product search">
-  <div class="hero-search__bar">
-    <span class="hero-search__icon" aria-hidden="true">⌕</span>
-    <input
-      id="heroSearchInput"
-      class="hero-search__input"
-      type="text"
-      placeholder="Beschrijf wat je zoekt… (bv. ‘handschoenen maat M’, ‘hygiëne spray’, ‘Nike onder €50’)’"
-      autocomplete="off"
-    />
-    <button id="heroSearchBtn" class="hero-search__btn" type="button">Zoek</button>
-  </div>
-
-  <div id="heroSearchStatus" class="hero-search__status"></div>
-  <div id="heroSearchResults" class="hero-search__results"></div>
-</section>
-
-    
     <!-- Shop (live uit D1 via API) -->
     <section id="shop" class="section">
       <div class="container">
@@ -116,7 +112,7 @@
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
-<div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
-  
+  <div id="globalToast" class="global-toast" aria-live="polite" aria-atomic="true"></div>
+
 </body>
 </html>
