@@ -1742,3 +1742,64 @@ body {
   opacity: 1;
   transform: translateX(120%);
 }
+
+/* =========================
+   Mouse-tracking light physics — Product Cards
+   ========================= */
+
+.product-card {
+  /* defaults (worden door JS live gezet) */
+  --mx: 50%;
+  --my: 35%;
+  --int: 0; /* intensity 0..1 */
+
+  position: relative;
+  isolation: isolate;
+}
+
+/* cursor-follow highlight */
+.product-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+
+  /* “spotlight” dat de cursor volgt */
+  background: radial-gradient(
+    260px circle at var(--mx) var(--my),
+    rgba(255,255,255,0.16),
+    rgba(255,255,255,0.08) 22%,
+    transparent 55%
+  );
+
+  opacity: calc(var(--int) * 1);
+  transition: opacity .25s ease;
+}
+
+/* zachte edge tint (meer ‘coating’ gevoel) */
+.product-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.10),
+    transparent 35%,
+    rgba(255,255,255,0.06)
+  );
+
+  opacity: calc(var(--int) * 0.9);
+  mix-blend-mode: screen;
+  transition: opacity .25s ease;
+}
+
+/* klein extra depth bij hover (past bij je eerdere effecten) */
+.product-card:hover {
+  box-shadow: 0 22px 70px rgba(0,0,0,0.50);
+}
