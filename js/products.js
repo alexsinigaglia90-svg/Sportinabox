@@ -1,16 +1,8 @@
 // js/products.js — Sport in a Box (Shop grid + Premium Image Engine)
 //
-// Includes:
-// - Cloudflare Worker image presets:
-//     /img/cover   (grid/cards)  -> always consistent 4:3 cover
-//     /img/contain (detail/hero) -> full product in frame (used elsewhere)
-// - Cart add + badge update
-// - Toast feedback
-// - Exposes window.SIB.getCatalogForAI() for your hero search (app.js)
-//
-// IMPORTANT:
-// - Your Worker must support:  GET {API_BASE}/img/cover?src=...
-// - index.html must load products.js BEFORE app.js
+// - Grid/cards: /img/cover (uniform 4:3 cover)
+// - AI catalog: window.SIB.getCatalogForAI() (for hero search in app.js)
+// - Cart add + badge update + toast
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
@@ -19,14 +11,7 @@ const CART_KEY = "sib_cart_v1";
 function cfImage(url, opts = {}) {
   if (!url) return "";
 
-  const {
-    preset = "cover", // "cover" | "contain"
-    w,
-    h,
-    q,
-    dpr
-  } = opts;
-
+  const { preset = "cover", w, h, q, dpr } = opts;
   const endpoint = preset === "contain" ? "/img/contain" : "/img/cover";
   const u = new URL(API_BASE + endpoint);
 
@@ -116,7 +101,7 @@ function updateCartBadge() {
 
 function addToCartFromProduct(p) {
   const cart = readCart();
-  const images = normalizeImageList(p.images_json ?? p.images);
+  const images = normalizeImageList(p.images_json ?? p.images ?? p.images_raw ?? []);
   const existing = cart.items.find((it) => it.id === p.id);
 
   if (existing) {
@@ -152,12 +137,18 @@ function productHref(slug) {
 }
 
 function card(p) {
-  const images = normalizeImageList(p.images_json ?? p.images);
-  const raw = images.length ? images[0] : "";
+  // IMPORTANT: p can be either raw API product or normalized AI product.
+  // Prefer raw list, then JSON/images, then p.image.
+  const images = p.images_raw
+    ? normalizeImageList(p.images_raw)
+    : normalizeImageList(p.images_json ?? p.images);
+
+  const raw = images[0] || "";
   const href = productHref(p.slug);
 
-  // ✅ PREMIUM: always uniform 4:3 cover via Worker preset
-  const img = raw ? cfImage(raw, { preset: "cover" }) : "";
+  // If we have a raw upstream image -> render via cover preset
+  // If not, but p.image exists (already processed) -> use it
+  const img = raw ? cfImage(raw, { preset: "cover" }) : (p.image || "");
 
   return `
   <article class="product-card" data-slug="${esc(p.slug)}" role="link" tabindex="0" aria-label="${esc(p.name)}">
@@ -188,20 +179,64 @@ function card(p) {
   </article>`;
 }
 
+/* =========================
+   window.SIB API (used by app.js search)
+   ========================= */
+(function exposeSIB() {
+  const cache = { products: null, t: 0 };
+
+  async function getCatalogForAI() {
+    const now = Date.now();
+    if (cache.products && (now - cache.t) < 120000) return cache.products;
+
+    const products = await fetchProducts();
+
+    const normalized = products.map((p) => {
+      const images = normalizeImageList(p.images_json ?? p.images);
+      const raw = images[0] || "";
+
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        description: p.description || "",
+        price_cents: p.price_cents,
+        currency: p.currency || "EUR",
+
+        // ready-to-use image for small suggestion cards
+        image: raw ? cfImage(raw, { preset: "cover" }) : "",
+        images_raw: images
+      };
+    });
+
+    cache.products = normalized;
+    cache.t = now;
+    return normalized;
+  }
+
+  window.SIB = window.SIB || {};
+  window.SIB.getCatalogForAI = getCatalogForAI;
+  window.SIB.cfImage = cfImage;
+})();
+
 async function mountProducts() {
   const grid = document.querySelector("[data-products-grid]");
   const state = document.querySelector("[data-products-state]");
 
-  // Page might not be the shop grid (e.g. other pages)
   updateCartBadge();
 
+  // If there's no grid on this page, we still want SIB available for app.js
+  if (!grid || !state) {
+    // warm cache (optional)
+    try { await window.SIB.getCatalogForAI(); } catch {}
+    return;
+  }
+
+  state.textContent = "Laden…";
+
   try {
-    // Always preload products so AI search can work even if no grid exists
-    const products = await window.SIB.getCatalogForAI();
-
-    if (!grid || !state) return;
-
-    state.textContent = "Laden…";
+    // ✅ IMPORTANT FIX: grid uses raw API products (with images_json)
+    const products = await fetchProducts();
 
     if (!products.length) {
       state.textContent = "Nog geen producten (public). Voeg in Admin een product toe en zet status op published.";
@@ -251,58 +286,14 @@ async function mountProducts() {
         window.location.href = productHref(slug);
       }
     });
+
+    // warm AI cache (so search is instant)
+    try { await window.SIB.getCatalogForAI(); } catch {}
+
   } catch (e) {
-    if (state) state.textContent = "Kon producten niet laden. Check API /products.";
+    state.textContent = "Kon producten niet laden. Check API /products.";
     console.error(e);
   }
 }
 
-/* =========================
-   window.SIB API (used by app.js search)
-   ========================= */
-(function exposeSIB() {
-  const cache = { products: null, t: 0 };
-
-  async function getCatalogForAI() {
-    // Cache for 2 minutes to keep UX snappy (and reduce API hits)
-    const now = Date.now();
-    if (cache.products && (now - cache.t) < 120000) return cache.products;
-
-    const products = await fetchProducts();
-
-    // Normalize to a consistent shape for app.js
-    const normalized = products.map((p) => {
-      const images = normalizeImageList(p.images_json ?? p.images);
-      const raw = images[0] || "";
-
-      return {
-        id: p.id,
-        slug: p.slug,
-        name: p.name,
-        description: p.description || "",
-        price_cents: p.price_cents,
-        currency: p.currency || "EUR",
-
-        // IMPORTANT:
-        // Provide a ready-to-use image URL for the hero search cards.
-        // Use cover preset (small cards). (Detail page will use contain separately.)
-        image: raw ? cfImage(raw, { preset: "cover" }) : "",
-
-        // Keep raw list too (handy for product.html later)
-        images_raw: images
-      };
-    });
-
-    cache.products = normalized;
-    cache.t = now;
-    return normalized;
-  }
-
-  // Attach to window
-  window.SIB = window.SIB || {};
-  window.SIB.getCatalogForAI = getCatalogForAI;
-  window.SIB.cfImage = cfImage; // handy for other pages (product detail)
-})();
-
 document.addEventListener("DOMContentLoaded", mountProducts);
-
