@@ -1658,3 +1658,11 @@ body {
 @keyframes hsShimmer{
   100%{ transform: translateX(100%); }
 }
+
+.product-card__img {
+  transition: transform .35s cubic-bezier(.22,.61,.36,1);
+}
+
+.product-card:hover .product-card__img {
+  transform: scale(1.03);
+}
