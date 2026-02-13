@@ -15,7 +15,8 @@ const CART_KEY = "sib_cart_v1";
 function cfImage(url, opts = {}) {
   if (!url) return "";
 
-  const { w = 1200, h = 900, fit = "cover", q = 85 } = opts;
+  // ✅ Added "format" support (your code already calls format:"auto")
+  const { w = 1200, h = 900, fit = "cover", q = 85, format = "auto" } = opts;
 
   const u = new URL("https://sportinabox-api.alex-sinigaglia90.workers.dev/img");
   u.searchParams.set("src", url);
@@ -23,16 +24,38 @@ function cfImage(url, opts = {}) {
   u.searchParams.set("h", String(h));
   u.searchParams.set("fit", fit);
   u.searchParams.set("q", String(q));
+  u.searchParams.set("format", format);
 
   return u.toString();
 }
 
+// -----------------------------------------
+// ✅ NEW: simple in-memory cache for products
+// -----------------------------------------
+let _productsCache = null;
+let _productsCacheAt = 0;
 
-async function fetchProducts() {
+/**
+ * Fetch products from API with cache.
+ * @param {Object} opts
+ * @param {boolean} opts.forceRefresh - bypass cache
+ * @param {number} opts.maxAgeMs - cache TTL
+ */
+async function fetchProducts({ forceRefresh = false, maxAgeMs = 60_000 } = {}) {
+  const now = Date.now();
+  if (!forceRefresh && _productsCache && (now - _productsCacheAt) < maxAgeMs) {
+    return _productsCache;
+  }
+
   const r = await fetch(`${API_BASE}/products`, { headers: { Accept: "application/json" } });
   if (!r.ok) throw new Error("Products API failed");
   const data = await r.json();
-  return data.results || [];
+
+  const results = data.results || [];
+  _productsCache = results;
+  _productsCacheAt = now;
+
+  return results;
 }
 
 function euro(cents, currency = "EUR") {
@@ -244,3 +267,28 @@ async function mountProducts() {
 }
 
 document.addEventListener("DOMContentLoaded", mountProducts);
+
+// -------------------------------------------------------------------
+// ✅ NEW: expose product access for homepage AI-search / recommendations
+// -------------------------------------------------------------------
+window.SIB = window.SIB || {};
+window.SIB.API_BASE = API_BASE;
+window.SIB.getProducts = fetchProducts;
+
+// AI-friendly catalog projection (small & stable schema)
+// (This is what your future chatbot/search will consume)
+window.SIB.getCatalogForAI = async function (opts = {}) {
+  const products = await fetchProducts(opts);
+  return products.map((p) => {
+    const images = normalizeImageList(p.images_json ?? p.images);
+    return {
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      description: p.description || "",
+      price_cents: p.price_cents,
+      currency: p.currency || "EUR",
+      image: images[0] || ""
+    };
+  });
+};
