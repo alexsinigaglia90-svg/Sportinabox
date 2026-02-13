@@ -425,3 +425,71 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     initHeroSearch();
   }
 })();
+
+// =========================
+// Mouse-tracking light physics for .product-card
+// =========================
+(() => {
+  const cards = () => Array.from(document.querySelectorAll(".product-card"));
+
+  function bindCard(card) {
+    let raf = 0;
+
+    const setVars = (clientX, clientY) => {
+      const r = card.getBoundingClientRect();
+      const x = Math.min(Math.max((clientX - r.left) / r.width, 0), 1);
+      const y = Math.min(Math.max((clientY - r.top) / r.height, 0), 1);
+      card.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
+      card.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
+    };
+
+    const onMove = (e) => {
+      const p = e.touches?.[0] || e;
+      if (!p) return;
+
+      // throttle via rAF
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setVars(p.clientX, p.clientY);
+      });
+    };
+
+    const onEnter = () => card.style.setProperty("--int", "1");
+    const onLeave = () => card.style.setProperty("--int", "0");
+
+    // Pointer events: werkt voor mouse + pen
+    card.addEventListener("pointerenter", onEnter);
+    card.addEventListener("pointerleave", onLeave);
+    card.addEventListener("pointermove", onMove);
+
+    // Touch fallback (optioneel, maar veilig)
+    card.addEventListener("touchstart", onEnter, { passive: true });
+    card.addEventListener("touchend", onLeave, { passive: true });
+    card.addEventListener("touchmove", onMove, { passive: true });
+  }
+
+  function init() {
+    // bind existing cards
+    cards().forEach(bindCard);
+
+    // If products grid loads later (AJAX), observe and auto-bind new cards
+    const grid = document.querySelector("[data-products-grid]");
+    if (!grid) return;
+
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes.forEach((n) => {
+          if (!(n instanceof HTMLElement)) return;
+          if (n.classList?.contains("product-card")) bindCard(n);
+          n.querySelectorAll?.(".product-card")?.forEach(bindCard);
+        });
+      }
+    });
+
+    mo.observe(grid, { childList: true, subtree: true });
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+
