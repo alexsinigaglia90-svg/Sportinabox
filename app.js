@@ -1,7 +1,8 @@
-// app.js
+// app.js (clean & working)
 
-// Year in footer (safe)
-document.getElementById("year")?.textContent = new Date().getFullYear();
+// Footer year (safe)
+const yearEl = document.getElementById("year");
+if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
 // Smooth scroll for in-page anchors
 document.querySelectorAll('a[href^="#"]').forEach((link) => {
@@ -17,9 +18,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   });
 });
 
-/* Hero AI-style search (scoring on live catalog from products.js)
-   Requires: products.js loaded before app.js (window.SIB.getCatalogForAI)
-*/
+// Hero AI search
 (function () {
   function euroFromCents(cents, currency = "EUR") {
     const n = Number(cents || 0) / 100;
@@ -81,7 +80,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     return score;
   }
 
-  async function runHeroSearch() {
+  function initHeroSearch() {
     const input = document.getElementById("heroSearchInput");
     const btn = document.getElementById("heroSearchBtn");
     const status = document.getElementById("heroSearchStatus");
@@ -147,9 +146,10 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     });
   }
 
+  // Robust init
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", runHeroSearch);
+    document.addEventListener("DOMContentLoaded", initHeroSearch);
   } else {
-    runHeroSearch();
+    initHeroSearch();
   }
 })();
