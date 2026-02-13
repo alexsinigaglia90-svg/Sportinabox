@@ -1,4 +1,4 @@
-// app.js (clean & working)
+// app.js — Sport in a Box
 
 // Footer year (safe)
 const yearEl = document.getElementById("year");
@@ -18,7 +18,10 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   });
 });
 
-// Hero AI search
+/* =========================
+   Hero AI-style product search
+   Requires: products.js loaded first (window.SIB.getCatalogForAI)
+   ========================= */
 (function () {
   function euroFromCents(cents, currency = "EUR") {
     const n = Number(cents || 0) / 100;
