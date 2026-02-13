@@ -1,28 +1,46 @@
-// js/products.js — Sport in a Box (Shop grid + Premium Image Engine)
-//
-// - Grid/cards: /img/cover (uniform 4:3 cover)
-// - AI catalog: window.SIB.getCatalogForAI() (for hero search in app.js)
-// - Cart add + badge update + toast
+// js/products.js — Sport in a Box (Shop grid + AI catalog)
+// - Uses your Worker image engine: /img (no /cdn-cgi/image)
+// - Adds TWO image modes:
+//    1) "cover"  -> cinematic crop (fit=cover)
+//    2) "product"-> background removal + fixed background + contain (mode=product)
+// - Exposes: window.SIB.getCatalogForAI() for hero search in app.js
+// - Keeps: cart badge, add-to-cart, toast, card click navigation
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
 
-/** Build optimized image URL via your Worker presets */
-function cfImage(url, opts = {}) {
+/* -------------------- Image helpers (Worker) -------------------- */
+
+// Standard resize/crop (good for "cinematic" images)
+function cfImageCover(url, opts = {}) {
   if (!url) return "";
+  const { w = 1200, h = 900, q = 85, fit = "cover" } = opts;
 
-  const { preset = "cover", w, h, q, dpr } = opts;
-  const endpoint = preset === "contain" ? "/img/contain" : "/img/cover";
-  const u = new URL(API_BASE + endpoint);
-
+  const u = new URL(`${API_BASE}/img`);
   u.searchParams.set("src", url);
-  if (w) u.searchParams.set("w", String(w));
-  if (h) u.searchParams.set("h", String(h));
-  if (q) u.searchParams.set("q", String(q));
-  if (dpr) u.searchParams.set("dpr", String(dpr));
-
+  u.searchParams.set("w", String(w));
+  u.searchParams.set("h", String(h));
+  u.searchParams.set("fit", fit);
+  u.searchParams.set("q", String(q));
   return u.toString();
 }
+
+// Premium product engine (background removal + fixed background + contain)
+function cfImageProduct(url, opts = {}) {
+  if (!url) return "";
+  const { w = 1200, h = 900, q = 90, bg = "#0b0f1a" } = opts;
+
+  const u = new URL(`${API_BASE}/img`);
+  u.searchParams.set("src", url);
+  u.searchParams.set("w", String(w));
+  u.searchParams.set("h", String(h));
+  u.searchParams.set("q", String(q));
+  u.searchParams.set("mode", "product");
+  if (bg) u.searchParams.set("bg", bg);
+  return u.toString();
+}
+
+/* -------------------- API + utils -------------------- */
 
 async function fetchProducts() {
   const r = await fetch(`${API_BASE}/products`, { headers: { Accept: "application/json" } });
@@ -46,7 +64,7 @@ function esc(s) {
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
-    "'": "&#039;"
+    "'": "&#039;",
   }[m]));
 }
 
@@ -64,6 +82,12 @@ function normalizeImageList(imagesJsonOrArray) {
   if (!Array.isArray(arr)) return [];
   return arr.map((x) => (typeof x === "string" ? x.trim() : "")).filter(Boolean);
 }
+
+function productHref(slug) {
+  return `./product.html?slug=${encodeURIComponent(slug)}`;
+}
+
+/* -------------------- Cart -------------------- */
 
 function readCart() {
   try {
@@ -101,7 +125,7 @@ function updateCartBadge() {
 
 function addToCartFromProduct(p) {
   const cart = readCart();
-  const images = normalizeImageList(p.images_json ?? p.images ?? p.images_raw ?? []);
+  const images = normalizeImageList(p.images_json ?? p.images);
   const existing = cart.items.find((it) => it.id === p.id);
 
   if (existing) {
@@ -115,7 +139,7 @@ function addToCartFromProduct(p) {
       currency: p.currency || "EUR",
       qty: 1,
       image: images[0] || "",
-      meta: {}
+      meta: {},
     });
   }
   writeCart(cart);
@@ -132,23 +156,15 @@ function toast(text = "Added to cart") {
   toast._t = window.setTimeout(() => el.classList.remove("is-visible"), 1200);
 }
 
-function productHref(slug) {
-  return `./product.html?slug=${encodeURIComponent(slug)}`;
-}
+/* -------------------- Rendering -------------------- */
 
 function card(p) {
-  // IMPORTANT: p can be either raw API product or normalized AI product.
-  // Prefer raw list, then JSON/images, then p.image.
-  const images = p.images_raw
-    ? normalizeImageList(p.images_raw)
-    : normalizeImageList(p.images_json ?? p.images);
-
-  const raw = images[0] || "";
+  const images = normalizeImageList(p.images_json ?? p.images);
+  const raw = images.length ? images[0] : "";
   const href = productHref(p.slug);
 
-  // If we have a raw upstream image -> render via cover preset
-  // If not, but p.image exists (already processed) -> use it
-  const img = raw ? cfImage(raw, { preset: "cover" }) : (p.image || "");
+  // ✅ PREMIUM PRODUCT IMAGE: background removal + uniform background + contain
+  const img = raw ? cfImageProduct(raw, { w: 1200, h: 900, q: 90, bg: "#0b0f1a" }) : "";
 
   return `
   <article class="product-card" data-slug="${esc(p.slug)}" role="link" tabindex="0" aria-label="${esc(p.name)}">
@@ -179,64 +195,26 @@ function card(p) {
   </article>`;
 }
 
-/* =========================
-   window.SIB API (used by app.js search)
-   ========================= */
-(function exposeSIB() {
-  const cache = { products: null, t: 0 };
+/* -------------------- Shared catalog cache -------------------- */
 
-  async function getCatalogForAI() {
-    const now = Date.now();
-    if (cache.products && (now - cache.t) < 120000) return cache.products;
+let _productsPromise = null;
+function getProductsCached() {
+  if (!_productsPromise) _productsPromise = fetchProducts();
+  return _productsPromise;
+}
 
-    const products = await fetchProducts();
-
-    const normalized = products.map((p) => {
-      const images = normalizeImageList(p.images_json ?? p.images);
-      const raw = images[0] || "";
-
-      return {
-        id: p.id,
-        slug: p.slug,
-        name: p.name,
-        description: p.description || "",
-        price_cents: p.price_cents,
-        currency: p.currency || "EUR",
-
-        // ready-to-use image for small suggestion cards
-        image: raw ? cfImage(raw, { preset: "cover" }) : "",
-        images_raw: images
-      };
-    });
-
-    cache.products = normalized;
-    cache.t = now;
-    return normalized;
-  }
-
-  window.SIB = window.SIB || {};
-  window.SIB.getCatalogForAI = getCatalogForAI;
-  window.SIB.cfImage = cfImage;
-})();
+/* -------------------- Mount grid -------------------- */
 
 async function mountProducts() {
   const grid = document.querySelector("[data-products-grid]");
   const state = document.querySelector("[data-products-state]");
+  if (!grid || !state) return;
 
   updateCartBadge();
-
-  // If there's no grid on this page, we still want SIB available for app.js
-  if (!grid || !state) {
-    // warm cache (optional)
-    try { await window.SIB.getCatalogForAI(); } catch {}
-    return;
-  }
-
   state.textContent = "Laden…";
 
   try {
-    // ✅ IMPORTANT FIX: grid uses raw API products (with images_json)
-    const products = await fetchProducts();
+    const products = await getProductsCached();
 
     if (!products.length) {
       state.textContent = "Nog geen producten (public). Voeg in Admin een product toe en zet status op published.";
@@ -286,14 +264,41 @@ async function mountProducts() {
         window.location.href = productHref(slug);
       }
     });
-
-    // warm AI cache (so search is instant)
-    try { await window.SIB.getCatalogForAI(); } catch {}
-
   } catch (e) {
     state.textContent = "Kon producten niet laden. Check API /products.";
     console.error(e);
   }
 }
 
+/* -------------------- AI catalog for hero search -------------------- */
+
+async function getCatalogForAI() {
+  const products = await getProductsCached();
+
+  return products.map((p) => {
+    const images = normalizeImageList(p.images_json ?? p.images);
+    const raw = images[0] || "";
+
+    return {
+      id: p.id,
+      slug: p.slug,
+      name: p.name || "",
+      description: p.description || "",
+      price_cents: p.price_cents || 0,
+      currency: p.currency || "EUR",
+      category: p.category || "",
+      image: raw ? cfImageProduct(raw, { w: 900, h: 675, q: 88, bg: "#0b0f1a" }) : "",
+    };
+  });
+}
+
+// Expose to window for app.js hero search
+window.SIB = window.SIB || {};
+window.SIB.getCatalogForAI = getCatalogForAI;
+window.SIB.cfImageCover = cfImageCover;
+window.SIB.cfImageProduct = cfImageProduct;
+
+/* -------------------- Boot -------------------- */
 document.addEventListener("DOMContentLoaded", mountProducts);
+
+/* EOF */
