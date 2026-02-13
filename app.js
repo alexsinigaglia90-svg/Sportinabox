@@ -147,5 +147,9 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     });
   }
 
-  document.addEventListener("DOMContentLoaded", runHeroSearch);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runHeroSearch);
+  } else {
+    runHeroSearch();
+  }
 })();
