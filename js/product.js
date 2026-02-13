@@ -1,19 +1,41 @@
-// js/product.js — Ultra high-end product detail page
+// js/product.js — Ultra high-end product detail page (Premium Image Engine)
+//
+// Changes vs your version:
+// - Uses Worker presets:
+//    - /img/contain for HERO (detail page) => never crops product, premium look
+//    - /img/cover for THUMBS => consistent thumbs
+// - Uses same preset-based cfImage signature as products.js (less mistakes)
+// - Adds dpr support (retina crisp) + keeps optional overrides
+//
+// Requirements:
+// - Worker supports: GET /img/cover and /img/contain
+// - product.html loads this file
+// - cart badge updater is optional (works if present)
 
 const API_BASE = "https://sportinabox-api.alex-sinigaglia90.workers.dev";
 const CART_KEY = "sib_cart_v1";
 
-// Use Worker image engine (no /cdn-cgi/image; avoids 9524/403)
+/** Use Worker image engine presets */
 function cfImage(url, opts = {}) {
   if (!url) return "";
-  const { w = 1600, h = 1200, fit = "cover", q = 90 } = opts;
 
-  const u = new URL(`${API_BASE}/img`);
+  const {
+    preset = "cover", // "cover" | "contain"
+    w,
+    h,
+    q,
+    dpr
+  } = opts;
+
+  const endpoint = preset === "contain" ? "/img/contain" : "/img/cover";
+  const u = new URL(API_BASE + endpoint);
+
   u.searchParams.set("src", url);
-  u.searchParams.set("w", String(w));
-  u.searchParams.set("h", String(h));
-  u.searchParams.set("fit", fit);
-  u.searchParams.set("q", String(q));
+  if (w) u.searchParams.set("w", String(w));
+  if (h) u.searchParams.set("h", String(h));
+  if (q) u.searchParams.set("q", String(q));
+  if (dpr) u.searchParams.set("dpr", String(dpr));
+
   return u.toString();
 }
 
@@ -125,7 +147,6 @@ function show(elId, yes) {
   el.style.display = yes ? "" : "none";
 }
 
-
 function renderThumbs(images, onPick) {
   const thumbs = document.getElementById("pdThumbs");
   if (!thumbs) return;
@@ -136,7 +157,11 @@ function renderThumbs(images, onPick) {
     btn.type = "button";
     btn.className = "pd__thumb";
     btn.setAttribute("aria-label", `Afbeelding ${idx + 1}`);
-    btn.innerHTML = `<img class="pd__thumbImg" alt="" src="${esc(cfImage(rawUrl, { w: 320, h: 240, q: 85 }))}">`;
+
+    // ✅ Premium thumbs: consistent 4:3 cover
+    const thumbUrl = cfImage(rawUrl, { preset: "cover", w: 320, h: 240, q: 82, dpr: 2 });
+
+    btn.innerHTML = `<img class="pd__thumbImg" alt="" src="${esc(thumbUrl)}" loading="lazy">`;
     btn.addEventListener("click", () => onPick(idx));
     thumbs.appendChild(btn);
   });
@@ -151,7 +176,6 @@ function renderSpecs(p) {
   const specs = document.getElementById("pdSpecs");
   if (!specs) return;
 
-  // Minimal but premium: show what you have, without looking “empty”.
   const rows = [];
   rows.push(["Merk", "Sport in a Box"]);
   if (p.sku) rows.push(["SKU", String(p.sku)]);
@@ -170,9 +194,7 @@ function renderHighlights(p) {
   const ul = document.getElementById("pdHighlights");
   if (!ul) return;
 
-  // If you don’t have highlights in DB yet, we generate tasteful defaults from description.
   const items = [];
-
   const desc = (p.description || "").trim();
   if (desc) items.push("Premium formule voor dagelijks gebruik");
   items.push("Consistente prestaties — ontworpen voor sport & hygiëne");
@@ -190,7 +212,6 @@ async function init() {
     return;
   }
 
-  // Always hide "not found" until we really know
   show("pdNotFound", false);
   show("pdSkeleton", true);
   show("pdContent", false);
@@ -204,8 +225,6 @@ async function init() {
     return;
   }
 
-  // If your API returns only published to public endpoints, this is fine.
-  // If not: enforce UX here
   if (p.status && String(p.status) !== "published") {
     show("pdSkeleton", false);
     show("pdContent", false);
@@ -219,7 +238,6 @@ async function init() {
   setText("pdPrice", euro(p.price_cents, p.currency || "EUR"));
   setText("pdDesc", p.description || "");
 
-  // Title
   document.title = `${p.name || "Product"} — Sport in a Box`;
 
   const images = normalizeImageList(p.images_json ?? p.images);
@@ -229,8 +247,12 @@ async function init() {
   function setHero(idx) {
     activeIndex = idx;
     if (!hero) return;
+
     const raw = images[idx] || images[0] || "";
-    hero.src = raw ? cfImage(raw, { w: 1600, h: 1200, q: 90, fit: "cover" }) : "";
+
+    // ✅ Premium HERO: contain (never crop), dark background handled by Worker
+    // Also pass explicit size (optional) for predictable cache keys
+    hero.src = raw ? cfImage(raw, { preset: "contain", w: 1400, h: 1050, q: 85, dpr: 2 }) : "";
     hero.alt = p.name || "";
     setActiveThumb(idx);
   }
@@ -266,7 +288,6 @@ async function init() {
     });
   }
 
-  // Show content
   show("pdSkeleton", false);
   show("pdContent", true);
 }
