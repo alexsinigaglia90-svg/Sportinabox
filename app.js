@@ -1,4 +1,4 @@
-// app.js — Sport in a Box (full, upgraded)
+// app.js — Sport in a Box (full, upgraded + typo-tolerant fuzzy search)
 
 // Footer year (safe)
 const yearEl = document.getElementById("year");
@@ -19,7 +19,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
 });
 
 /* =========================
-   Hero AI-style product search — upgraded
+   Hero AI-style product search — upgraded + FUZZY TYPO MATCHING
    - Typeahead (debounced)
    - Suggestion chips
    - Highlight matches
@@ -27,6 +27,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
    - Keyboard navigation (↑ ↓ Enter Esc)
    - Skeleton loading
    - Catalog caching
+   - Fuzzy matching: typos + prefix + synonyms + diacritics normalize
    Requires: products.js loaded first (window.SIB.getCatalogForAI)
    ========================= */
 (function () {
@@ -49,6 +50,120 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     }[m]));
   }
 
+  // ---------- Fuzzy helpers ----------
+  function stripDiacritics(s) {
+    // "hygiëne" -> "hygiene"
+    return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function normalizeText(s) {
+    return stripDiacritics(String(s ?? "").toLowerCase())
+      .replace(/[^\p{L}\p{N}\s€-]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // Very fast Levenshtein for short tokens (good enough for search)
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    if (!a) return b.length;
+    if (!b) return a.length;
+
+    const al = a.length, bl = b.length;
+    // Ensure b is shorter for less memory
+    if (bl > al) { const t = a; a = b; b = t; }
+
+    const v0 = new Array(b.length + 1);
+    const v1 = new Array(b.length + 1);
+
+    for (let i = 0; i <= b.length; i++) v0[i] = i;
+
+    for (let i = 0; i < a.length; i++) {
+      v1[0] = i + 1;
+      for (let j = 0; j < b.length; j++) {
+        const cost = a[i] === b[j] ? 0 : 1;
+        v1[j + 1] = Math.min(
+          v1[j] + 1,       // insertion
+          v0[j + 1] + 1,   // deletion
+          v0[j] + cost     // substitution
+        );
+      }
+      for (let j = 0; j <= b.length; j++) v0[j] = v1[j];
+    }
+    return v1[b.length];
+  }
+
+  function fuzzyTokenMatchScore(token, words) {
+    // Returns a score contribution for this token:
+    // - exact/prefix match => strong
+    // - 1–2 char typo match => medium (depending on token length)
+    // - no match => 0
+    if (!token || token.length < 2) return 0;
+
+    const t = token;
+
+    // Quick exact/prefix checks
+    for (const w of words) {
+      if (w === t) return 14;
+      if (w.startsWith(t) && t.length >= 3) return 11;   // "bal" -> "basketbal"
+      if (t.startsWith(w) && w.length >= 3) return 9;    // "basketbal" with token "basket"
+      if (w.includes(t) && t.length >= 3) return 10;
+    }
+
+    // Typo tolerance via Levenshtein, only for reasonable lengths
+    const maxEdits =
+      t.length <= 4 ? 1 :
+      t.length <= 7 ? 2 : 2;
+
+    let best = 0;
+    for (const w of words) {
+      const wl = w.length;
+      if (wl < 3) continue;
+
+      // avoid expensive compares on huge mismatch
+      if (Math.abs(wl - t.length) > 3) continue;
+
+      const d = levenshtein(t, w);
+      if (d <= maxEdits) {
+        // closer typo -> higher score
+        const sc = d === 0 ? 14 : (d === 1 ? 8 : 5);
+        if (sc > best) best = sc;
+      }
+    }
+    return best;
+  }
+
+  // Synonyms / common misspellings you can extend over time
+  const SYN = {
+    // hygiene
+    "hygiene": ["hygiëne", "hygiene", "sanitair", "desinfect", "desinfectie", "desinfecterend", "sanitize", "sanitizer"],
+    "hygiëne": ["hygiëne", "hygiene", "desinfect", "desinfectie", "sanitize", "sanitizer"],
+    "desinfect": ["desinfect", "desinfectie", "desinfecterend", "sanitize", "sanitizer", "alcoholgel", "handgel"],
+    "handgel": ["handgel", "alcoholgel", "sanitizer", "sanitize"],
+
+    // sports basics
+    "bal": ["bal", "voetbal", "basketbal", "handbal", "volleybal", "ball"],
+    "voetbal": ["voetbal", "soccer", "bal", "football"],
+    "basketbal": ["basketbal", "bal", "basket", "basketball"],
+
+    // gloves
+    "handschoen": ["handschoen", "handschoenen", "glove", "gloves"],
+    "handschoenen": ["handschoenen", "handschoen", "glove", "gloves"],
+
+    // tape
+    "tape": ["tape", "sporttape", "athletic tape", "kinesio", "kinesiotape"]
+  };
+
+  function expandTokens(tokens) {
+    const out = new Set(tokens);
+    for (const t of tokens) {
+      const key = t;
+      const add = SYN[key];
+      if (add) add.forEach(x => out.add(normalizeText(x)));
+    }
+    return [...out].filter(Boolean);
+  }
+
   function extractMaxPriceEUR(q) {
     const m1 = q.match(/(?:onder|max|under)\s*€?\s*(\d+(?:[.,]\d+)?)/i);
     const m2 = q.match(/€\s*(\d+(?:[.,]\d+)?)/i);
@@ -58,42 +173,50 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   }
 
   function tokenize(q) {
-    return q
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}\s€]/gu, " ")
-      .split(/\s+/)
-      .filter(Boolean);
+    return normalizeText(q).split(/\s+/).filter(Boolean);
   }
 
   function scoreProduct(p, tokens, maxPrice) {
-    const hay = `${p.name} ${p.description || ""}`.toLowerCase();
+    const nameN = normalizeText(p.name);
+    const descN = normalizeText(p.description || "");
+
+    const nameWords = nameN.split(" ").filter(Boolean);
+    const descWords = descN.split(" ").filter(Boolean);
+
+    // tokens expanded w/ synonyms
+    const tks = expandTokens(tokens);
+
     let score = 0;
 
-    for (const t of tokens) {
-      if (t.length < 2) continue;
-      if (hay.includes(t)) score += 12;
+    // Stronger weight on name matches than description
+    for (const t of tks) {
+      score += fuzzyTokenMatchScore(t, nameWords) * 1.15;
+      score += fuzzyTokenMatchScore(t, descWords) * 0.85;
     }
 
+    // Budget preference
     if (maxPrice != null) {
       const eur = (Number(p.price_cents || 0) / 100);
       if (eur <= maxPrice) score += 18;
       else score -= Math.min(25, Math.round((eur - maxPrice) * 2));
     }
 
-    // Soft intent boosts
-    if (tokens.some((t) => ["hygiëne", "hygiene", "spray", "desinfect", "handgel"].includes(t))) {
-      if (hay.match(/hygiëne|hygiene|spray|desinfect|handgel/)) score += 10;
+    // Light category boosts based on intent tokens
+    const joined = `${nameN} ${descN}`;
+    if (tks.some(t => ["hygiëne","hygiene","spray","desinfect","desinfectie","handgel","sanitizer","sanitize"].includes(t))) {
+      if (joined.match(/hygi|desinfect|spray|handgel|sanit/i)) score += 10;
     }
-    if (tokens.some((t) => ["sport", "training", "fitness", "run", "rennen", "voetbal", "basketbal"].includes(t))) {
-      if (hay.match(/sport|training|fitness|run|rennen|voetbal|basketbal/)) score += 8;
+    if (tks.some(t => ["sport","training","fitness","run","rennen","voetbal","basketbal","bal","tape"].includes(t))) {
+      if (joined.match(/sport|training|fitness|run|rennen|voetbal|basketbal|bal|tape/i)) score += 8;
     }
 
     return score;
   }
 
   function highlight(text, tokens) {
+    // Highlight is best-effort (doesn't need to be fuzzy)
     const safe = esc(text);
-    const tks = tokens.filter((t) => t.length >= 2).slice(0, 6);
+    const tks = tokens.filter(t => t.length >= 2).slice(0, 6);
     if (!tks.length) return safe;
 
     let out = safe;
@@ -105,9 +228,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   }
 
   function skeletonsHTML(n = 6) {
-    return Array.from({ length: n })
-      .map(
-        () => `
+    return Array.from({ length: n }).map(() => `
       <div class="hero-search__skeleton" aria-hidden="true">
         <div class="hero-search__skImg"></div>
         <div>
@@ -116,9 +237,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
           <div class="hero-search__skLine sm"></div>
         </div>
       </div>
-    `
-      )
-      .join("");
+    `).join("");
   }
 
   function clamp01(x) {
@@ -146,9 +265,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
 
     container.innerHTML = `
       <div class="hero-search__chips" aria-label="Suggesties">
-        ${suggestions
-          .map((s) => `<button type="button" class="hero-search__chip" data-q="${esc(s)}">Probeer: ${esc(s)}</button>`)
-          .join("")}
+        ${suggestions.map(s => `<button type="button" class="hero-search__chip" data-q="${esc(s)}">Probeer: ${esc(s)}</button>`).join("")}
       </div>
     `;
 
@@ -160,10 +277,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
   function setActive(resultsEl, idx) {
     const cards = [...resultsEl.querySelectorAll(".hero-search__card")];
     cards.forEach((c) => c.classList.remove("is-active"));
-    if (!cards.length) {
-      activeIndex = -1;
-      return;
-    }
+    if (!cards.length) { activeIndex = -1; return; }
     activeIndex = Math.max(0, Math.min(idx, cards.length - 1));
     cards[activeIndex].classList.add("is-active");
     cards[activeIndex].scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -181,7 +295,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
       return;
     }
 
-    // Add chips container right under status (no HTML changes needed)
+    // Add chips under status (no HTML changes needed)
     const chipsHost = document.createElement("div");
     status.insertAdjacentElement("afterend", chipsHost);
     renderChips(chipsHost, (q) => {
@@ -193,7 +307,8 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     let debounceTimer = null;
 
     async function doSearch(force = false) {
-      const query = (input.value || "").trim();
+      const queryRaw = (input.value || "").trim();
+      const query = normalizeText(queryRaw);
 
       if (!force && query.length < 2) {
         status.textContent = "Tip: typ wat je zoekt — of klik op een suggestie.";
@@ -209,7 +324,7 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
       try {
         const catalog = await getCatalog();
         const tokens = tokenize(query);
-        const maxPrice = extractMaxPriceEUR(query);
+        const maxPrice = extractMaxPriceEUR(queryRaw);
 
         const ranked = catalog
           .map((p) => ({ p, s: scoreProduct(p, tokens, maxPrice) }))
@@ -218,38 +333,35 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
           .filter((x) => x.s > 0);
 
         if (!ranked.length) {
-          status.textContent = `Geen sterke matches voor: "${query}".`;
+          status.textContent = `Geen sterke matches voor: "${queryRaw}".`;
           resultsEl.innerHTML = "";
           return;
         }
 
-        status.textContent = `Suggesties voor: "${query}"`;
+        status.textContent = `Suggesties voor: "${queryRaw}"`;
 
         const maxS = Math.max(...ranked.map((x) => x.s));
-        resultsEl.innerHTML = ranked
-          .map(({ p, s }) => {
-            const href = `./product.html?slug=${encodeURIComponent(p.slug)}`;
-            const price = euroFromCents(p.price_cents, p.currency || "EUR");
-            const conf = clamp01(s / (maxS || 1));
-            const meterW = Math.round(25 + conf * 70); // 25–95%
+        resultsEl.innerHTML = ranked.map(({ p, s }) => {
+          const href = `./product.html?slug=${encodeURIComponent(p.slug)}`;
+          const price = euroFromCents(p.price_cents, p.currency || "EUR");
+          const conf = clamp01(s / (maxS || 1));
+          const meterW = Math.round(25 + conf * 70); // 25–95%
 
-            return `
-              <a class="hero-search__card" href="${href}" data-card="1">
-                ${p.image ? `<img class="hero-search__img" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" />` : ""}
-                <div class="hero-search__body">
-                  <div class="hero-search__title">${highlight(p.name, tokens)}</div>
-                  <div class="hero-search__meta">${esc(price)}</div>
-                  <div class="hero-search__reason">${highlight((p.description || "").slice(0, 60), tokens)}</div>
-                  <div class="hero-search__meter" aria-hidden="true">
-                    <div class="hero-search__meterFill" style="width:${meterW}%"></div>
-                  </div>
+          return `
+            <a class="hero-search__card" href="${href}" data-card="1">
+              ${p.image ? `<img class="hero-search__img" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" />` : ""}
+              <div class="hero-search__body">
+                <div class="hero-search__title">${highlight(p.name, tokens)}</div>
+                <div class="hero-search__meta">${esc(price)}</div>
+                <div class="hero-search__reason">${highlight((p.description || "").slice(0, 60), tokens)}</div>
+                <div class="hero-search__meter" aria-hidden="true">
+                  <div class="hero-search__meterFill" style="width:${meterW}%"></div>
                 </div>
-              </a>
-            `;
-          })
-          .join("");
+              </div>
+            </a>
+          `;
+        }).join("");
 
-        // set first active for keyboard navigation
         setActive(resultsEl, 0);
       } catch (e) {
         console.error(e);
@@ -258,16 +370,16 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
       }
     }
 
-    // Click search button
+    // Click search
     btn.addEventListener("click", () => doSearch(true));
 
-    // Typeahead with debounce
+    // Typeahead (debounced)
     input.addEventListener("input", () => {
       window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => doSearch(false), 180);
     });
 
-    // Keyboard navigation + enter
+    // Keyboard navigation
     input.addEventListener("keydown", (e) => {
       const cards = resultsEl.querySelectorAll(".hero-search__card");
 
@@ -301,16 +413,12 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
       }
     });
 
-    // initial state
     status.textContent = "Tip: typ wat je zoekt — of klik op een suggestie.";
 
-    // preload catalog after first paint (makes first query feel instant)
-    window.setTimeout(() => {
-      getCatalog().catch(() => {});
-    }, 350);
+    // Preload catalog after first paint
+    window.setTimeout(() => { getCatalog().catch(() => {}); }, 350);
   }
 
-  // Robust init
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initHeroSearch);
   } else {
