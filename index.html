@@ -68,6 +68,25 @@
       </div>
     </section>
 
+<!-- PLAK DIT OP INDEX.HTML PRECIES OP DE PLEK VAN JE RODE VLAK (onder de knoppen in je hero) -->
+<section class="hero-search" aria-label="AI product search">
+  <div class="hero-search__bar">
+    <span class="hero-search__icon" aria-hidden="true">⌕</span>
+    <input
+      id="heroSearchInput"
+      class="hero-search__input"
+      type="text"
+      placeholder="Beschrijf wat je zoekt… (bv. ‘handschoenen maat M’, ‘hygiëne spray’, ‘Nike onder €50’)’"
+      autocomplete="off"
+    />
+    <button id="heroSearchBtn" class="hero-search__btn" type="button">Zoek</button>
+  </div>
+
+  <div id="heroSearchStatus" class="hero-search__status"></div>
+  <div id="heroSearchResults" class="hero-search__results"></div>
+</section>
+
+    
     <!-- Shop (live uit D1 via API) -->
     <section id="shop" class="section">
       <div class="container">
