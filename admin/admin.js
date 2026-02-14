@@ -446,8 +446,8 @@
     if (fDescription) fDescription.value = p.description || "";
 
     const specs = safeJsonParse(p.specs_json, {});
-    const hl = Array.isArray(specs.highlights) ? specs.highlights.join("
-") : "";
+    const hl = Array.isArray(specs.highlights) ? specs.highlights.join("\n") : "";
+
     if (fHighlights) fHighlights.value = hl;
 
     // Sidebar organization fields (stored in specs)
