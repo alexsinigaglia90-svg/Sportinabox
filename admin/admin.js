@@ -36,12 +36,32 @@
   const refreshBtn = $("refreshBtn");
   const newProductBtn = $("newProductBtn");
 
+  // Products toolbar
+  const productsSearch = $("productsSearch");
+  const filterAll = $("filterAll");
+  const filterPublished = $("filterPublished");
+  const filterDraft = $("filterDraft");
+  const selectAll = $("selectAll");
+  const quickPublishBtn = $("quickPublishBtn");
+  const duplicateBtn = $("duplicateBtn");
+
   // Editor
   const editorWrap = $("editorWrap");
   const editorTitle = $("editorTitle");
   const editorSub = $("editorSub");
   const cancelEditBtn = $("cancelEditBtn");
   const saveBtn = $("saveBtn");
+
+  const formErrors = $("formErrors");
+  const slugError = $("slugError");
+
+  // Preview
+  const previewImg = $("previewImg");
+  const previewStatus = $("previewStatus");
+  const previewName = $("previewName");
+  const previewMeta = $("previewMeta");
+  const previewPrice = $("previewPrice");
+  const previewDesc = $("previewDesc");
 
   // Fields
   const fName = $("fName");
@@ -56,6 +76,8 @@
 
   // Images
   const fImageFiles = $("fImageFiles");
+  const pickImagesBtn = $("pickImagesBtn");
+  const dropzone = $("dropzone");
   const uploadImagesBtn = $("uploadImagesBtn");
   const uploadState = $("uploadState");
   const imageGrid = $("imageGrid");
@@ -75,6 +97,10 @@
     editing: null, // product object
     images: [], // array of URLs
     activeTab: "core",
+    listQuery: "",
+    listStatus: "all", // all | published | draft
+    selected: new Set(),
+    pendingImageFiles: [],
   };
 
   function token() {
@@ -92,6 +118,23 @@
     globalToast.classList.add("is-visible");
     clearTimeout(toast._t);
     toast._t = setTimeout(() => globalToast.classList.remove("is-visible"), 1400);
+  }
+
+  function setFormError(msg) {
+    if (!formErrors) return;
+    if (!msg) {
+      formErrors.textContent = "";
+      formErrors.classList.add("state--hidden");
+      return;
+    }
+    formErrors.textContent = String(msg);
+    formErrors.classList.remove("state--hidden");
+  }
+
+  function markFieldInvalid(fieldEl, yes) {
+    const wrap = fieldEl?.closest?.(".field");
+    if (!wrap) return;
+    wrap.classList.toggle("is-invalid", !!yes);
   }
 
   function authHeaders() {
@@ -119,6 +162,15 @@
       .slice(0, 80);
   }
 
+  function isSlugTaken(slug, ignoreId) {
+    const s = String(slug || "").trim().toLowerCase();
+    if (!s) return false;
+    return (state.products || []).some((p) => {
+      if (ignoreId != null && String(p.id) === String(ignoreId)) return false;
+      return String(p.slug || "").toLowerCase() === s;
+    });
+  }
+
   function priceToCents(input) {
     // accepteert "29,99" of "29.99" of "2999"
     const raw = String(input || "").trim();
@@ -134,6 +186,10 @@
   function centsToPretty(cents) {
     const n = (Number(cents || 0) / 100);
     return n.toFixed(2).replace(".", ",");
+  }
+
+  function prettyToCurrency(cents) {
+    return `€ ${centsToPretty(cents)}`;
   }
 
   function safeJsonParse(text, fallback) {
@@ -197,15 +253,33 @@
     if (!productsTbody) return;
     productsTbody.innerHTML = "";
 
-    const rows = state.products || [];
+    const query = String(state.listQuery || "").trim().toLowerCase();
+    const statusFilter = state.listStatus;
+
+    const rows = (state.products || []).filter((p) => {
+      if (statusFilter !== "all" && String(p.status || "") !== statusFilter) return false;
+      if (!query) return true;
+      const hay = `${p.name || ""} ${p.slug || ""} ${p.category || ""}`.toLowerCase();
+      return hay.includes(query);
+    });
     if (navCount) navCount.textContent = rows.length ? String(rows.length) : "0";
+
+    // Sync select-all
+    if (selectAll) {
+      const allVisibleIds = rows.map((r) => String(r.id));
+      const selVisible = allVisibleIds.filter((id) => state.selected.has(id));
+      selectAll.checked = allVisibleIds.length > 0 && selVisible.length === allVisibleIds.length;
+      selectAll.indeterminate = selVisible.length > 0 && selVisible.length < allVisibleIds.length;
+    }
 
     for (const p of rows) {
       const tr = document.createElement("tr");
       const tagClass = p.status === "published" ? "tag published" : "tag draft";
-      const price = `€ ${centsToPretty(p.price_cents)}`;
+      const price = prettyToCurrency(p.price_cents);
+      const isSel = state.selected.has(String(p.id));
 
       tr.innerHTML = `
+        <td><input type="checkbox" data-sel="${p.id}" ${isSel ? "checked" : ""} aria-label="Select product" /></td>
         <td><b>${escapeHtml(p.name || "")}</b></td>
         <td>${escapeHtml(p.slug || "")}</td>
         <td>${escapeHtml(p.category || "")}</td>
@@ -350,6 +424,10 @@
 
     if (uploadState) uploadState.textContent = "—";
     if (fImageFiles) fImageFiles.value = "";
+    state.pendingImageFiles = [];
+    setFormError("");
+    updateSlugValidation();
+    updatePreview();
 
     setActiveTab("core");
   }
@@ -358,6 +436,45 @@
     if (editorWrap) editorWrap.classList.add("state--hidden");
     state.editing = null;
     state.images = [];
+  }
+
+  function updateSlugValidation() {
+    if (!fSlug) return;
+    const s = String(fSlug.value || "").trim();
+    const taken = isSlugTaken(s, state.editing?.id);
+
+    const slugField = fSlug.closest?.(".field");
+    if (slugField) slugField.classList.toggle("is-invalid", taken);
+    if (slugError) slugError.classList.toggle("state--hidden", !taken);
+    return !taken;
+  }
+
+  function updatePreview() {
+    // lightweight, live preview while editing
+    if (!state.editing) return;
+
+    const name = (fName?.value || "").trim() || "—";
+    const category = (fCategory?.value || "").trim() || "—";
+    const slug = (fSlug?.value || "").trim() || "—";
+    const status = (fStatus?.value || "draft").trim();
+    const desc = (fDescription?.value || "").trim() || "—";
+    const priceCents = priceToCents(fPrice?.value || "");
+    const cover = (state.images || [])[0] || "";
+
+    if (previewName) previewName.textContent = name;
+    if (previewMeta) previewMeta.textContent = `${category} · ${slug}`;
+    if (previewStatus) previewStatus.textContent = status;
+    if (previewPrice) previewPrice.textContent = priceCents > 0 ? prettyToCurrency(priceCents) : "€ —";
+    if (previewDesc) previewDesc.textContent = desc;
+    if (previewImg) {
+      if (cover) {
+        previewImg.src = cover;
+        previewImg.style.opacity = "1";
+      } else {
+        previewImg.removeAttribute("src");
+        previewImg.style.opacity = ".55";
+      }
+    }
   }
 
   function validateSpecsJson() {
@@ -400,6 +517,7 @@
 
     if (!name) throw new Error("Name is required");
     if (!slug) throw new Error("Slug is required");
+    if (!updateSlugValidation()) throw new Error("Slug is al in gebruik");
     if (!category) throw new Error("Category is required");
     if (!Number.isFinite(price_cents) || price_cents <= 0) throw new Error("Price is required");
 
@@ -442,6 +560,79 @@
     closeEditor();
   }
 
+  async function bulkTogglePublish() {
+    const ids = Array.from(state.selected);
+    if (!ids.length) {
+      toast("Selecteer eerst producten");
+      return;
+    }
+
+    const updates = ids
+      .map((id) => (state.products || []).find((p) => String(p.id) === String(id)))
+      .filter(Boolean);
+
+    for (const p of updates) {
+      const next = p.status === "published" ? "draft" : "published";
+      await api(`/admin/products/${p.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          slug: p.slug,
+          name: p.name,
+          description: p.description || "",
+          price_cents: p.price_cents,
+          currency: p.currency || "EUR",
+          category: p.category || "",
+          specs_json: p.specs_json || "{}",
+          images_json: p.images_json || "[]",
+          status: next,
+        }),
+      });
+    }
+
+    toast("Updated");
+    state.selected.clear();
+    await loadProducts();
+  }
+
+  async function duplicateSelected() {
+    const ids = Array.from(state.selected);
+    if (ids.length !== 1) {
+      toast("Selecteer precies 1 product om te dupliceren");
+      return;
+    }
+
+    const p = (state.products || []).find((x) => String(x.id) === String(ids[0]));
+    if (!p) return;
+
+    let baseSlug = `${p.slug}-copy`;
+    let slug = baseSlug;
+    let i = 2;
+    while (isSlugTaken(slug, null)) {
+      slug = `${baseSlug}-${i++}`;
+    }
+
+    await api(`/admin/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({
+        slug,
+        name: `${p.name} (Copy)`,
+        description: p.description || "",
+        price_cents: p.price_cents,
+        currency: p.currency || "EUR",
+        category: p.category || "",
+        specs_json: p.specs_json || "{}",
+        images_json: p.images_json || "[]",
+        status: "draft",
+      }),
+    });
+
+    toast("Duplicated");
+    state.selected.clear();
+    await loadProducts();
+  }
+
   async function deleteProduct(id) {
     await api(`/admin/products/${id}`, {
       method: "DELETE",
@@ -455,14 +646,19 @@
     if (productsState) productsState.textContent = "Loading…";
     const data = await fetchAdminProducts();
     state.products = data.results || [];
+    // Fill category datalist
+    const dl = document.getElementById("categoryList");
+    if (dl) {
+      const cats = Array.from(new Set((state.products || []).map((p) => String(p.category || "").trim()).filter(Boolean)))
+        .sort((a, b) => a.localeCompare(b));
+      dl.innerHTML = cats.map((c) => `<option value="${escapeHtml(c)}"></option>`).join("");
+    }
     renderProductsTable();
     if (productsState) productsState.textContent = "—";
   }
 
-  async function uploadSelectedImages() {
-    if (!fImageFiles) return;
-
-    const files = fImageFiles.files;
+  async function uploadSelectedImages(filesOverride) {
+    const files = filesOverride?.length ? filesOverride : (fImageFiles?.files || state.pendingImageFiles);
     if (!files || !files.length) {
       if (uploadState) uploadState.textContent = "Selecteer eerst één of meerdere images.";
       return;
@@ -470,7 +666,7 @@
 
     if (uploadState) uploadState.textContent = `Uploading ${files.length} image(s)…`;
 
-    for (const file of files) {
+    for (const file of Array.from(files)) {
       const form = new FormData();
       form.append("file", file, file.name);
 
@@ -490,10 +686,12 @@
 
       state.images.push(data.url);
       renderImageGrid();
+      updatePreview();
     }
 
     if (uploadState) uploadState.textContent = "Upload complete.";
-    fImageFiles.value = "";
+    if (fImageFiles) fImageFiles.value = "";
+    state.pendingImageFiles = [];
     toast("Images uploaded");
   }
 
@@ -507,8 +705,17 @@
     if (!productsTbody) return;
 
     productsTbody.addEventListener("click", async (e) => {
+      const sel = e.target.closest("[data-sel]");
       const edit = e.target.closest("[data-edit]");
       const del = e.target.closest("[data-del]");
+
+      if (sel) {
+        const id = String(sel.getAttribute("data-sel"));
+        if (sel.checked) state.selected.add(id);
+        else state.selected.delete(id);
+        renderProductsTable();
+        return;
+      }
 
       if (edit) {
         const id = edit.getAttribute("data-edit");
@@ -546,7 +753,107 @@
 
     fName.addEventListener("input", () => {
       if (!slugTouched) fSlug.value = slugify(fName.value);
+      updateSlugValidation();
+      updatePreview();
     });
+
+    fSlug.addEventListener("input", () => {
+      updateSlugValidation();
+      updatePreview();
+    });
+
+    [fCategory, fPrice, fDescription, fStatus].forEach((el) => {
+      if (!el) return;
+      el.addEventListener("input", updatePreview);
+    });
+
+    if (fPrice) {
+      fPrice.addEventListener("blur", () => {
+        const cents = priceToCents(fPrice.value);
+        if (cents > 0) fPrice.value = centsToPretty(cents);
+        updatePreview();
+      });
+    }
+  }
+
+  function wireProductsToolbar() {
+    const setFilterActive = () => {
+      const s = state.listStatus;
+      if (filterAll) filterAll.classList.toggle("is-active", s === "all");
+      if (filterPublished) filterPublished.classList.toggle("is-active", s === "published");
+      if (filterDraft) filterDraft.classList.toggle("is-active", s === "draft");
+    };
+
+    if (productsSearch) {
+      productsSearch.addEventListener("input", () => {
+        state.listQuery = productsSearch.value;
+        renderProductsTable();
+      });
+    }
+
+    if (filterAll) filterAll.addEventListener("click", () => { state.listStatus = "all"; setFilterActive(); renderProductsTable(); });
+    if (filterPublished) filterPublished.addEventListener("click", () => { state.listStatus = "published"; setFilterActive(); renderProductsTable(); });
+    if (filterDraft) filterDraft.addEventListener("click", () => { state.listStatus = "draft"; setFilterActive(); renderProductsTable(); });
+
+    if (selectAll && productsTbody) {
+      selectAll.addEventListener("change", () => {
+        const q = String(state.listQuery || "").trim().toLowerCase();
+        const statusFilter = state.listStatus;
+        const visible = (state.products || []).filter((p) => {
+          if (statusFilter !== "all" && String(p.status || "") !== statusFilter) return false;
+          if (!q) return true;
+          const hay = `${p.name || ""} ${p.slug || ""} ${p.category || ""}`.toLowerCase();
+          return hay.includes(q);
+        });
+
+        if (selectAll.checked) visible.forEach((p) => state.selected.add(String(p.id)));
+        else visible.forEach((p) => state.selected.delete(String(p.id)));
+        renderProductsTable();
+      });
+    }
+
+    if (quickPublishBtn) quickPublishBtn.addEventListener("click", () => bulkTogglePublish().catch((e) => toast(e?.message || "Failed")));
+    if (duplicateBtn) duplicateBtn.addEventListener("click", () => duplicateSelected().catch((e) => toast(e?.message || "Failed")));
+  }
+
+  function wireImagesUX() {
+    if (pickImagesBtn && fImageFiles) {
+      pickImagesBtn.addEventListener("click", () => fImageFiles.click());
+    }
+
+    if (fImageFiles) {
+      fImageFiles.addEventListener("change", () => {
+        state.pendingImageFiles = Array.from(fImageFiles.files || []);
+        if (uploadState) uploadState.textContent = state.pendingImageFiles.length ? `${state.pendingImageFiles.length} file(s) ready` : "—";
+      });
+    }
+
+    if (dropzone) {
+      const onPick = () => fImageFiles?.click();
+      dropzone.addEventListener("click", (e) => {
+        if (e.target.closest("button")) return; // buttons handle themselves
+        onPick();
+      });
+      dropzone.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPick();
+        }
+      });
+
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("is-dragover");
+      });
+      dropzone.addEventListener("dragleave", () => dropzone.classList.remove("is-dragover"));
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("is-dragover");
+        const files = Array.from(e.dataTransfer?.files || []).filter((f) => f.type?.startsWith("image/"));
+        state.pendingImageFiles = files;
+        if (uploadState) uploadState.textContent = files.length ? `${files.length} dropped — ready to upload` : "—";
+      });
+    }
   }
 
   async function startApp() {
@@ -569,6 +876,8 @@
     wireEditorTabs();
     wireTableActions();
     wireCoreUX();
+    wireProductsToolbar();
+    wireImagesUX();
 
     if (loginBtn) {
       loginBtn.addEventListener("click", async () => {
@@ -599,9 +908,11 @@
     if (saveBtn) {
       saveBtn.addEventListener("click", async () => {
         try {
+          setFormError("");
           await saveProduct();
         } catch (e) {
           console.error(e);
+          setFormError(e?.message || "Save failed");
           toast(e?.message || "Save failed");
         }
       });
