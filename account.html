@@ -1,159 +1,180 @@
-<!doctype html>
-<html lang="nl">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My account — Sport in a Box</title>
-  <meta name="description" content="Account, adressen en bestelhistorie." />
-  <link rel="stylesheet" href="./styles.css" />
-  <script defer src="./js/auth-client.js"></script>
-  <script defer src="./js/auth-ui.js"></script>
-  <script defer src="./js/account.js"></script>
+  <meta charset="UTF-8" />
+  <title>My Account – Sportinabox</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <style>
+    :root{
+      --bg:#0B0E11;
+      --panel:rgba(255,255,255,.06);
+      --stroke:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.6);
+      --accent:#EDE729;
+      --radius:18px;
+    }
+
+    html,body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    .wrap{
+      max-width:900px;
+      margin:60px auto;
+      padding:20px;
+    }
+
+    .card{
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:22px;
+      backdrop-filter: blur(18px);
+    }
+
+    h1{ margin:0 0 14px 0; font-size:28px; }
+    .muted{ color:var(--muted); }
+
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:18px;
+      padding-top:18px;
+      border-top:1px solid var(--stroke);
+    }
+
+    button{
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      color:var(--text);
+      padding:10px 16px;
+      border-radius:14px;
+      cursor:pointer;
+      font-size:14px;
+    }
+
+    button:hover{
+      background:rgba(255,255,255,.1);
+    }
+
+    .accent{
+      background:rgba(237,231,41,.12);
+      border-color:rgba(237,231,41,.25);
+    }
+
+    .orders{
+      margin-top:26px;
+    }
+
+    .order{
+      padding:12px;
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      margin-top:10px;
+      font-size:14px;
+      color:var(--muted);
+    }
+  </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="container topbar__inner">
-      <a class="brand" href="./index.html" aria-label="Sport in a Box home">Sport in a Box</a>
-      <nav class="nav">
-        <a class="nav__link" href="./index.html">Home</a>
-        <a class="nav__link" href="./cart.html">Cart <span id="cartBadge" class="badge" aria-hidden="true"></span></a>
-        <a class="nav__link nav__link--active" href="./account.html" data-auth-link>Account</a>
-      </nav>
-    </div>
-  </header>
+  <div class="wrap">
+    <div class="card">
+      <h1>My Account</h1>
+      <div id="userBox" class="muted">Loading account…</div>
 
-  <main class="container page">
-    <section class="section-head">
-      <div>
-        <h1 class="section__title">My account</h1>
-        <p class="section__lead" id="welcomeLine">—</p>
+      <div class="row">
+        <div>
+          <div class="muted">Session</div>
+          <div>Signed in</div>
+        </div>
+        <button id="signOut">Sign out</button>
       </div>
-      <div class="section__meta">
-        <button class="btn" id="btnSignOut" type="button">Sign out</button>
+
+      <div class="orders">
+        <div class="muted">Order history</div>
+        <div id="orders"></div>
       </div>
-    </section>
-
-    <section class="account-grid">
-      <aside class="account-side card">
-        <button class="side-item is-active" data-tab="orders" type="button">Orders</button>
-        <button class="side-item" data-tab="profile" type="button">Profile</button>
-        <button class="side-item" data-tab="addresses" type="button">Addresses</button>
-      </aside>
-
-      <section class="account-main">
-        <div class="tab is-active" id="tab-orders">
-          <div class="card">
-            <div class="card__head">
-              <h2 class="card__title">Order history</h2>
-              <span class="hint subtle">Je ziet hier je recente orders.</span>
-            </div>
-            <div id="ordersList" class="orders"></div>
-            <div id="ordersEmpty" class="empty is-hidden">
-              <div class="empty-title">Nog geen orders</div>
-              <div class="empty-sub">Zodra je afrekent verschijnt je order hier.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tab" id="tab-profile">
-          <form class="card" id="profileForm">
-            <div class="card__head">
-              <h2 class="card__title">Profile</h2>
-              <span class="hint subtle">Werk je gegevens bij.</span>
-            </div>
-
-            <div class="grid2">
-              <label class="field">
-                <span>Name</span>
-                <input class="input" name="name" type="text" autocomplete="name" />
-              </label>
-              <label class="field">
-                <span>Phone</span>
-                <input class="input" name="phone" type="tel" autocomplete="tel" />
-              </label>
-            </div>
-
-            <label class="field">
-              <span>Email</span>
-              <input class="input" name="email" type="email" autocomplete="email" disabled />
-            </label>
-
-            <div class="row">
-              <button class="btn-primary" type="submit">Save</button>
-              <span class="hint" id="profileHint"></span>
-            </div>
-          </form>
-        </div>
-
-        <div class="tab" id="tab-addresses">
-          <div class="card">
-            <div class="card__head">
-              <h2 class="card__title">Addresses</h2>
-              <button class="btn" id="btnAddAddress" type="button">Add address</button>
-            </div>
-
-            <div id="addressList" class="addresses"></div>
-
-            <form id="addressForm" class="address-form is-hidden">
-              <div class="grid2">
-                <label class="field">
-                  <span>Label</span>
-                  <input class="input" name="label" type="text" placeholder="Home / Work" />
-                </label>
-                <label class="field">
-                  <span>Country</span>
-                  <input class="input" name="country" type="text" value="NL" />
-                </label>
-              </div>
-
-              <label class="field">
-                <span>Address line 1</span>
-                <input class="input" name="line1" type="text" required />
-              </label>
-              <label class="field">
-                <span>Address line 2</span>
-                <input class="input" name="line2" type="text" />
-              </label>
-
-              <div class="grid2">
-                <label class="field">
-                  <span>Postal code</span>
-                  <input class="input" name="postal" type="text" required />
-                </label>
-                <label class="field">
-                  <span>City</span>
-                  <input class="input" name="city" type="text" required />
-                </label>
-              </div>
-
-              <label class="check">
-                <input type="checkbox" name="is_default" />
-                <span>Set as default</span>
-              </label>
-
-              <div class="row">
-                <button class="btn-primary" type="submit">Save address</button>
-                <button class="btn" id="btnCancelAddress" type="button">Cancel</button>
-                <span class="hint" id="addressHint"></span>
-              </div>
-
-              <input type="hidden" name="id" />
-            </form>
-          </div>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer__inner">
-      <span>© <span id="year"></span> Sport in a Box</span>
     </div>
-  </footer>
+  </div>
 
-  <div id="globalToast" class="toast" aria-live="polite"></div>
+  <script>
+    async function loadAccount() {
+      try {
+        const res = await fetch("/api/me", {
+          credentials: "include"
+        });
 
-  <script defer src="./js/cart-badge.js"></script>
-  <script defer src="./app.js"></script>
+        if (res.status === 401) {
+          window.location.href = "/login.html?returnTo=/account.html";
+          return;
+        }
+
+        const data = await res.json();
+        const user = data.user;
+
+        document.getElementById("userBox").innerHTML = `
+          <div><strong>${user.name || "Unnamed user"}</strong></div>
+          <div class="muted">${user.email}</div>
+        `;
+
+        loadOrders();
+
+      } catch (e) {
+        document.getElementById("userBox").textContent =
+          "Failed to load account";
+      }
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await fetch("/api/orders", {
+          credentials: "include"
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const el = document.getElementById("orders");
+
+        if (!data.orders?.length) {
+          el.innerHTML = '<div class="order">No orders yet</div>';
+          return;
+        }
+
+        el.innerHTML = data.orders.map(o => `
+          <div class="order">
+            Order ${o.id} – ${o.status} – € ${(o.total_cents/100).toFixed(2)}
+          </div>
+        `).join("");
+
+      } catch {}
+    }
+
+    async function signOut() {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: "{}"
+      });
+
+      localStorage.clear();
+      sessionStorage.clear();
+
+      window.location.href = "/";
+    }
+
+    document.getElementById("signOut")
+      .addEventListener("click", signOut);
+
+    loadAccount();
+  </script>
 </body>
 </html>
