@@ -18,8 +18,8 @@ function json(data, status = 200, headers = {}) {
   });
 }
 
-function expiredCookie(name) {
-  // Expire immediately (and match Path=/ used at login)
+function expireCookie(name) {
+  // Must match Path=/ from login cookie
   return `${name}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
 }
 
@@ -30,15 +30,11 @@ export async function onRequestOptions(context) {
 export async function onRequestPost(context) {
   const headers = corsHeaders(context.request);
 
-  // Expire BOTH possible cookie names (safe)
+  // Expire both names to be safe
   const setCookie = [
-    expiredCookie("sb_auth"),
-    expiredCookie("sb_session"),
-  ];
+    expireCookie("sb_auth"),
+    expireCookie("sb_session"),
+  ].join(", ");
 
-  return json(
-    { ok: true },
-    200,
-    { ...headers, "set-cookie": setCookie.join(", ") }
-  );
+  return json({ ok: true }, 200, { ...headers, "set-cookie": setCookie });
 }
