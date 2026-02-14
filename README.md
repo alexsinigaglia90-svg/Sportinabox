@@ -28,4 +28,4 @@ Run de SQL in `migrations/001_accounts_orders.sql` op je D1 database.
 - `/account.html` (orders / profile / addresses)
 
 Checkout in `cart.html` maakt nu een order aan voor ingelogde users.
- 
+  
