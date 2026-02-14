@@ -20,13 +20,23 @@
   const meLabel = $("meLabel");
 
   // Nav
+  const navHome = $("navHome");
   const navProducts = $("navProducts");
+  const navOrders = $("navOrders");
+  const navInventory = $("navInventory");
+  const navCustomers = $("navCustomers");
+  const navContent = $("navContent");
   const navAnalytics = $("navAnalytics");
   const navSettings = $("navSettings");
   const navCount = $("navCount");
 
   // Sections
+  const viewHome = $("viewHome");
   const viewProducts = $("viewProducts");
+  const viewOrders = $("viewOrders");
+  const viewInventory = $("viewInventory");
+  const viewCustomers = $("viewCustomers");
+  const viewContent = $("viewContent");
   const viewAnalytics = $("viewAnalytics");
   const viewSettings = $("viewSettings");
 
@@ -276,13 +286,25 @@
   function setRoute(hash) {
     const h = (hash || "#products").toLowerCase();
 
-    if (navProducts) navProducts.classList.toggle("is-active", h.startsWith("#products"));
-    if (navAnalytics) navAnalytics.classList.toggle("is-active", h.startsWith("#analytics"));
-    if (navSettings) navSettings.classList.toggle("is-active", h.startsWith("#settings"));
+    const is = (prefix) => h === prefix || h.startsWith(prefix + "/") || h.startsWith(prefix + "?") || h.startsWith(prefix + "&") || h.startsWith(prefix);
 
-    show(viewProducts, h.startsWith("#products"));
-    show(viewAnalytics, h.startsWith("#analytics"));
-    show(viewSettings, h.startsWith("#settings"));
+    if (navHome) navHome.classList.toggle("is-active", is("#home"));
+    if (navProducts) navProducts.classList.toggle("is-active", is("#products"));
+    if (navOrders) navOrders.classList.toggle("is-active", is("#orders"));
+    if (navInventory) navInventory.classList.toggle("is-active", is("#inventory"));
+    if (navCustomers) navCustomers.classList.toggle("is-active", is("#customers"));
+    if (navContent) navContent.classList.toggle("is-active", is("#content"));
+    if (navAnalytics) navAnalytics.classList.toggle("is-active", is("#analytics"));
+    if (navSettings) navSettings.classList.toggle("is-active", is("#settings"));
+
+    show(viewHome, is("#home"));
+    show(viewProducts, is("#products"));
+    show(viewOrders, is("#orders"));
+    show(viewInventory, is("#inventory"));
+    show(viewCustomers, is("#customers"));
+    show(viewContent, is("#content"));
+    show(viewAnalytics, is("#analytics"));
+    show(viewSettings, is("#settings"));
   }
 
   function renderProductsTable() {
@@ -447,7 +469,6 @@
 
     const specs = safeJsonParse(p.specs_json, {});
     const hl = Array.isArray(specs.highlights) ? specs.highlights.join("\n") : "";
-
     if (fHighlights) fHighlights.value = hl;
 
     // Sidebar organization fields (stored in specs)

@@ -282,7 +282,104 @@
     .editor-sidecol{ position: sticky; top: 86px; align-self:start; display:grid; gap: 14px; }
     @media (max-width: 980px){ .editor-sidecol{ position: static; } }
 
-  </style>
+  
+    /* Tesla/Apple Admin Shell */
+    body{
+      background: radial-gradient(900px 420px at 15% 0%, rgba(237,231,41,.10), transparent 55%),
+                  radial-gradient(800px 380px at 85% 10%, rgba(255,255,255,.06), transparent 60%),
+                  #0B0E11;
+    }
+
+    .admin-shell{
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 18px;
+      gap: 18px;
+      grid-template-columns: 300px 1fr;
+    }
+    @media (max-width: 980px){
+      .admin-shell{ grid-template-columns: 1fr; }
+      .admin-side{ position: relative; top: 0; height: auto; }
+    }
+
+    .admin-side{
+      height: calc(100vh - 36px);
+      display:flex;
+      flex-direction:column;
+    }
+
+    .side-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand{ display:flex; gap:12px; align-items:center; }
+    .brand-dot{
+      width: 12px; height: 12px; border-radius: 999px;
+      background: #EDE729;
+      box-shadow: 0 0 0 6px rgba(237,231,41,.10);
+    }
+    .brand-title{ font-size: 14px; font-weight: 700; letter-spacing: .2px; }
+    .brand-sub{ font-size: 12px; color: rgba(255,255,255,.62); margin-top: 2px; }
+
+    .pillbtn.ghost{
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .pillbtn.ghost:hover{
+      background: rgba(255,255,255,.06);
+    }
+
+    .side-nav{ display:flex; flex-direction:column; gap: 14px; margin-top: 14px; }
+    .nav-group{ display:flex; flex-direction:column; gap: 6px; }
+    .nav-label{
+      font-size: 11px;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.45);
+      padding: 8px 10px 2px;
+    }
+    .nav-item{
+      display:flex; align-items:center; gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: rgba(255,255,255,.86);
+    }
+    .nav-item .tag{ margin-left: auto; }
+    .nav-ic{ width: 20px; text-align:center; opacity: .9; }
+    .nav-item:hover{
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.08);
+    }
+    .nav-item.is-active{
+      background: rgba(237,231,41,.12);
+      border-color: rgba(237,231,41,.22);
+      color: rgba(255,255,255,.92);
+    }
+
+    .side-footer{ margin-top:auto; padding-top: 12px; }
+    .pill{
+      display:inline-flex; align-items:center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+    }
+
+    /* Panels for placeholder views */
+    .panel{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+    }
+    .panel-h{ display:grid; gap: 6px; }
+    .panel-title{ font-weight: 700; }
+    .panel-sub{ color: rgba(255,255,255,.62); font-size: 13px; line-height: 1.35; }
+</style>
 
   <script defer src="./admin.js"></script>
 </head>
@@ -312,17 +409,40 @@
   <!-- APP -->
   <main id="appView" class="admin-shell state--hidden">
     <aside class="admin-side">
-      <div class="admin-brand">
-        <h1>Sport in a Box</h1>
-        <button id="logoutBtn" class="pillbtn" type="button">Logout</button>
+      <div class="side-top">
+        <div class="brand">
+          <div class="brand-dot"></div>
+          <div class="brand-text">
+            <div class="brand-title">Sportinabox</div>
+            <div class="brand-sub">Admin Console</div>
+          </div>
+        </div>
+        <button id="logoutBtn" class="pillbtn ghost" type="button" title="Logout">Logout</button>
       </div>
+
       <div class="admin-user" id="meLabel">—</div>
 
-      <nav class="admin-nav" style="margin-top:12px;">
-        <a href="#products" id="navProducts">Products <span class="tag" id="navCount">—</span></a>
-        <a href="#analytics" id="navAnalytics">Analytics</a>
-        <a href="#settings" id="navSettings">Settings</a>
+      <nav class="side-nav" aria-label="Admin navigation">
+        <div class="nav-group">
+          <div class="nav-label">Core</div>
+          <a href="#home" id="navHome" class="nav-item"><span class="nav-ic">⌂</span><span>Home</span></a>
+          <a href="#products" id="navProducts" class="nav-item"><span class="nav-ic">▦</span><span>Products</span><span class="tag" id="navCount">—</span></a>
+          <a href="#orders" id="navOrders" class="nav-item"><span class="nav-ic">⟲</span><span>Orders</span></a>
+          <a href="#inventory" id="navInventory" class="nav-item"><span class="nav-ic">≣</span><span>Inventory</span></a>
+          <a href="#customers" id="navCustomers" class="nav-item"><span class="nav-ic">◎</span><span>Customers</span></a>
+        </div>
+
+        <div class="nav-group">
+          <div class="nav-label">Growth</div>
+          <a href="#content" id="navContent" class="nav-item"><span class="nav-ic">✎</span><span>Content</span></a>
+          <a href="#analytics" id="navAnalytics" class="nav-item"><span class="nav-ic">◔</span><span>Analytics</span></a>
+          <a href="#settings" id="navSettings" class="nav-item"><span class="nav-ic">⚙</span><span>Settings</span></a>
+        </div>
       </nav>
+
+      <div class="side-footer">
+        <div class="pill">Tesla/Apple UI</div>
+      </div>
     </aside>
 
     <section class="admin-main">
@@ -554,7 +674,87 @@
 </div>
       </div>
 
-      <!-- ANALYTICS -->
+      
+      <!-- HOME -->
+      <div id="viewHome" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Home</h2>
+            <p class="admin-sub">Overzicht van status, quick actions en alerts.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <div class="panel-title">Coming soon</div>
+            <div class="panel-sub">We bouwen hier een dashboard met KPI’s, alerts en snelkoppelingen.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div id="viewOrders" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Orders</h2>
+            <p class="admin-sub">Order overzicht, statussen, fulfilment.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <div class="panel-title">Coming soon</div>
+            <div class="panel-sub">Next: order list, payment status, fulfilment flows.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="viewInventory" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Inventory</h2>
+            <p class="admin-sub">Voorraad niveaus, alerts, adjustments.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <div class="panel-title">Coming soon</div>
+            <div class="panel-sub">Next: stock per product/variant, low-stock alerts, import/export.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div id="viewCustomers" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Customers</h2>
+            <p class="admin-sub">Customer profiles en purchase history.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <div class="panel-title">Coming soon</div>
+            <div class="panel-sub">Next: customer list, segments, lifetime value.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div id="viewContent" class="state--hidden">
+        <div class="admin-toprow">
+          <div>
+            <h2 class="admin-title">Content</h2>
+            <p class="admin-sub">Collections, pagina’s, banners.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">
+            <div class="panel-title">Coming soon</div>
+            <div class="panel-sub">Next: collections manager en homepage modules.</div>
+          </div>
+        </div>
+      </div>
+<!-- ANALYTICS -->
       <div id="viewAnalytics" class="state--hidden">
         <div class="admin-toprow">
           <div>
