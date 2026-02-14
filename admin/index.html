@@ -379,7 +379,14 @@
     .panel-h{ display:grid; gap: 6px; }
     .panel-title{ font-weight: 700; }
     .panel-sub{ color: rgba(255,255,255,.62); font-size: 13px; line-height: 1.35; }
-</style>
+
+    .pager{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.08); }
+    .pager-left{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .pager-right{ display:flex; align-items:center; gap:8px; }
+    .editor-savebar{ position: sticky; top: 0; z-index: 30; }
+    .es-state{ font-size:12px; color: rgba(255,255,255,.62); }
+
+  </style>
 
   <script defer src="./admin.js"></script>
 </head>
@@ -459,6 +466,7 @@
           </div>
         </div>
 
+        <div id="productsListPanel">
         <div class="admin-toolbar">
           <div class="left">
             <input id="productsSearch" class="admin-search" type="search" placeholder="Search by name, slug, category…" />
@@ -490,6 +498,26 @@
             <tbody id="productsTbody"></tbody>
           </table>
           <p class="muted" id="productsState" style="margin:10px 0 0;">—</p>
+
+          <div class="pager">
+            <div class="pager-left">
+              <button id="pagePrev" class="pillbtn is-quiet" type="button">Prev</button>
+              <button id="pageNext" class="pillbtn is-quiet" type="button">Next</button>
+              <span id="pageInfo" class="muted" style="margin-left:10px;">—</span>
+            </div>
+            <div class="pager-right">
+              <label class="muted" style="margin-right:8px;">Rows</label>
+              <select id="pageSize" class="input" style="max-width:120px;">
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
         </div>
 
                 <!-- EDITOR -->
@@ -501,6 +529,7 @@
                 <h3 id="editorTitle" class="es-title">New product</h3>
                 <div class="es-subrow">
                   <span id="unsavedBadge" class="es-unsaved state--hidden">Unsaved</span>
+                  <span id="saveState" class="es-state">Saved</span>
                   <span id="editorSub" class="es-sub">Werk in secties. Opslaan = naar D1.</span>
                 </div>
               </div>

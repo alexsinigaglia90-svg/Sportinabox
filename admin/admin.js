@@ -42,6 +42,13 @@
 
   // Products table
   const productsTbody = $("productsTbody");
+  const productsListPanel = $("productsListPanel");
+  const pagePrev = $("pagePrev");
+  const pageNext = $("pageNext");
+  const pageInfo = $("pageInfo");
+  const pageSize = $("pageSize");
+  const saveState = $("saveState");
+
   const productsState = $("productsState");
   const refreshBtn = $("refreshBtn");
   const newProductBtn = $("newProductBtn");
@@ -117,6 +124,8 @@
     activeTab: "core",
     listQuery: "",
     listStatus: "all", // all | published | draft
+    page: 1,
+    pageSize: 25,
     selected: new Set(),
     pendingImageFiles: [],
     dirty: false,
@@ -159,8 +168,11 @@
         if (el === fTrackQty && fQuantity) { fQuantity.disabled = !fTrackQty.checked; }
         const now = snapshotPayload();
         if (state.originalPayload == null) { setDirty(true); }
-        else if (now != null) { setDirty(now !== state.originalPayload); }
-        else { setDirty(false); }
+        else if (now != null) { setDirty(now !== state.originalPayload);
+        if (saveState) saveState.textContent = state.dirty ? "Unsaved changes" : "Saved";
+        scheduleLocalAutosave(); }
+        else { setDirty(false);
+    if (saveState) saveState.textContent = "Saved"; }
         updatePreview();
       });
     }
@@ -238,7 +250,138 @@
     return `€ ${centsToPretty(cents)}`;
   }
 
-  function safeJsonParse(text, fallback) {
+  
+  function filteredProducts() {
+    const query = String(state.listQuery || "").trim().toLowerCase();
+    const statusFilter = state.listStatus;
+
+    return (state.products || []).filter((p) => {
+      if (statusFilter !== "all" && String(p.status || "").toLowerCase() !== statusFilter) return false;
+      if (!query) return true;
+      const hay = `${p.name || ""} ${p.slug || ""} ${p.category || ""}`.toLowerCase();
+      return hay.includes(query);
+    });
+  }
+
+  function clampPage() {
+    const total = filteredProducts().length;
+    const pages = Math.max(1, Math.ceil(total / state.pageSize));
+    if (state.page > pages) state.page = pages;
+    if (state.page < 1) state.page = 1;
+    return pages;
+  }
+
+  function renderPager() {
+    const total = filteredProducts().length;
+    const pages = clampPage();
+    const from = total ? (state.page - 1) * state.pageSize + 1 : 0;
+    const to = Math.min(total, state.page * state.pageSize);
+
+    if (pageInfo) pageInfo.textContent = total ? `Showing ${from}–${to} of ${total} (page ${state.page}/${pages})` : "No products";
+    if (pagePrev) pagePrev.disabled = state.page <= 1;
+    if (pageNext) pageNext.disabled = state.page >= pages;
+  }
+
+  function setProductsMode(mode) {
+    if (productsListPanel) show(productsListPanel, mode === "list");
+  }
+
+  function parseProductsSubroute(hash) {
+    const h = (hash || "#products").toLowerCase();
+    if (!h.startsWith("#products")) return { kind: "list" };
+    let rest = h.slice("#products".length);
+    rest = rest.replace(/^\/+/, "");
+    if (!rest || rest.startsWith("?") || rest.startsWith("&")) return { kind: "list" };
+    const seg = rest.split(/[?&]/)[0];
+    if (seg === "new") return { kind: "new" };
+    return { kind: "edit", id: seg };
+  }
+
+  async function ensureProductsLoaded() {
+    if (state.products && Array.isArray(state.products) && state.products.length) return;
+    await loadProducts();
+  }
+
+  async function handleProductsRoute(hash) {
+    const sub = parseProductsSubroute(hash);
+
+    if (sub.kind === "list") {
+      setProductsMode("list");
+      closeEditor(true);
+      return;
+    }
+
+    setProductsMode("editor");
+    await ensureProductsLoaded();
+
+    if (sub.kind === "new") {
+      openEditor(null);
+      if (location.hash.toLowerCase() !== "#products/new") location.hash = "#products/new";
+      restoreLocalDraftIfAny();
+      return;
+    }
+
+    const id = decodeURIComponent(String(sub.id || ""));
+    const p = (state.products || []).find((x) => String(x.id) === String(id));
+    if (!p) {
+      toast("Product not found");
+      location.hash = "#products";
+      return;
+    }
+    openEditor(p);
+    restoreLocalDraftIfAny();
+  }
+
+  function draftKey() {
+    const id = state.editing && state.editing.id ? String(state.editing.id) : "new";
+    return `sib_admin_draft_${id}`;
+  }
+
+  let autosaveTimer = null;
+  function scheduleLocalAutosave() {
+    if (!state.dirty) return;
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      try {
+        const payload = snapshotPayload();
+        if (!payload) return;
+        localStorage.setItem(draftKey(), payload);
+        if (saveState) saveState.textContent = "Saved locally";
+      } catch (_) {}
+    }, 700);
+  }
+
+  function restoreLocalDraftIfAny() {
+    try {
+      const raw = localStorage.getItem(draftKey());
+      if (!raw) return;
+      if (state.originalPayload && raw === state.originalPayload) return;
+
+      const d = JSON.parse(raw);
+
+      if (fName && typeof d.name === "string") fName.value = d.name;
+      if (fSlug && typeof d.slug === "string") fSlug.value = d.slug;
+      if (fCategory && typeof d.category === "string") fCategory.value = d.category;
+      if (fCurrency && typeof d.currency === "string") fCurrency.value = d.currency;
+      if (fPrice && typeof d.price_cents === "number") fPrice.value = centsToPretty(d.price_cents);
+      if (fDescription && typeof d.description === "string") fDescription.value = d.description;
+      if (fStatus && typeof d.status === "string") fStatus.value = d.status;
+
+      const specs = safeJsonParse(d.specs_json || "{}", {});
+      if (fVendor && typeof specs.vendor === "string") fVendor.value = specs.vendor;
+      if (fType && typeof specs.type === "string") fType.value = specs.type;
+      if (fCollections && typeof specs.collections === "string") fCollections.value = specs.collections;
+      if (fTags && typeof specs.tags === "string") fTags.value = specs.tags;
+
+      if (saveState) saveState.textContent = "Restored local draft";
+      toast("Restored local draft");
+      updateSlugValidation();
+      updatePreview();
+      setDirty(true);
+    } catch (_) {}
+  }
+
+function safeJsonParse(text, fallback) {
     if (text == null) return fallback;
     if (typeof text === "object") return text;
     try { return JSON.parse(text); } catch { return fallback; }
@@ -307,56 +450,88 @@
     show(viewSettings, is("#settings"));
   }
 
+  
   function renderProductsTable() {
     if (!productsTbody) return;
     productsTbody.innerHTML = "";
 
-    const query = String(state.listQuery || "").trim().toLowerCase();
-    const statusFilter = state.listStatus;
-
-    const rows = (state.products || []).filter((p) => {
-      if (statusFilter !== "all" && String(p.status || "") !== statusFilter) return false;
-      if (!query) return true;
-      const hay = `${p.name || ""} ${p.slug || ""} ${p.category || ""}`.toLowerCase();
-      return hay.includes(query);
-    });
-    if (navCount) navCount.textContent = rows.length ? String(rows.length) : "0";
-
-    // Sync select-all
-    if (selectAll) {
-      const allVisibleIds = rows.map((r) => String(r.id));
-      const selVisible = allVisibleIds.filter((id) => state.selected.has(id));
-      selectAll.checked = allVisibleIds.length > 0 && selVisible.length === allVisibleIds.length;
-      selectAll.indeterminate = selVisible.length > 0 && selVisible.length < allVisibleIds.length;
-    }
-
-    for (const p of rows) {
-      const tr = document.createElement("tr");
-      const tagClass = p.status === "published" ? "tag published" : "tag draft";
-      const price = prettyToCurrency(p.price_cents);
-      const isSel = state.selected.has(String(p.id));
-
-      tr.innerHTML = `
-        <td><input type="checkbox" data-sel="${p.id}" ${isSel ? "checked" : ""} aria-label="Select product" /></td>
-        <td><b>${escapeHtml(p.name || "")}</b></td>
-        <td>${escapeHtml(p.slug || "")}</td>
-        <td>${escapeHtml(p.category || "")}</td>
-        <td><span class="${tagClass}">${escapeHtml(p.status || "")}</span></td>
-        <td>${price}</td>
-        <td>
-          <button class="pillbtn" data-edit="${p.id}" type="button">Edit</button>
-          <button class="pillbtn" data-del="${p.id}" type="button">Delete</button>
-        </td>
-      `;
-      productsTbody.appendChild(tr);
-    }
+    const rowsAll = filteredProducts();
+    clampPage();
+    const startIdx = (state.page - 1) * state.pageSize;
+    const rows = rowsAll.slice(startIdx, startIdx + state.pageSize);
 
     if (productsState) {
-      productsState.textContent = rows.length
-        ? `${rows.length} product(en)`
-        : "Nog geen producten.";
+      productsState.textContent = rowsAll.length ? `Filtered: ${rowsAll.length} • Selected: ${state.selected.size}` : "No products";
     }
+    renderPager();
+
+    rows.forEach((p) => {
+      const tr = document.createElement("tr");
+
+      const tdSel = document.createElement("td");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = state.selected.has(String(p.id));
+      cb.addEventListener("change", () => {
+        if (cb.checked) state.selected.add(String(p.id));
+        else state.selected.delete(String(p.id));
+        updateBulkBar();
+        renderProductsTable();
+      });
+      tdSel.appendChild(cb);
+      tr.appendChild(tdSel);
+
+      const tdName = document.createElement("td");
+      tdName.innerHTML = `<div style="font-weight:600;">${escapeHtml(p.name || "—")}</div><div class="muted" style="font-size:12px;">${escapeHtml(p.slug || "")}</div>`;
+      tr.appendChild(tdName);
+
+      const tdCat = document.createElement("td");
+      tdCat.textContent = p.category || "—";
+      tr.appendChild(tdCat);
+
+      const tdPrice = document.createElement("td");
+      tdPrice.textContent = centsToPretty(Number(p.price_cents || 0), p.currency || "EUR");
+      tr.appendChild(tdPrice);
+
+      const tdStatus = document.createElement("td");
+      const pill = document.createElement("span");
+      pill.className = "statuspill " + (String(p.status).toLowerCase() === "published" ? "is-live" : "is-draft");
+      pill.textContent = String(p.status || "draft");
+      tdStatus.appendChild(pill);
+      tr.appendChild(tdStatus);
+
+      const tdUpdated = document.createElement("td");
+      tdUpdated.textContent = p.updated_at ? new Date(p.updated_at).toLocaleString() : "—";
+      tr.appendChild(tdUpdated);
+
+      const tdAct = document.createElement("td");
+      const edit = document.createElement("button");
+      edit.className = "pillbtn is-quiet";
+      edit.type = "button";
+      edit.textContent = "Edit";
+      edit.addEventListener("click", () => {
+        location.hash = `#products/${encodeURIComponent(p.id)}`;
+      });
+
+      const dup = document.createElement("button");
+      dup.className = "pillbtn is-quiet";
+      dup.type = "button";
+      dup.textContent = "Duplicate";
+      dup.style.marginLeft = "8px";
+      dup.addEventListener("click", () => duplicateProduct(p));
+
+      tdAct.appendChild(edit);
+      tdAct.appendChild(dup);
+      tr.appendChild(tdAct);
+
+      productsTbody.appendChild(tr);
+    });
+
+    // Products sub-routing
+    if (is("#products")) { handleProductsRoute(h).catch((e)=>toast(e?.message||"Route error")); }
+
   }
+
 
   function setActiveTab(tab) {
     state.activeTab = tab;
@@ -657,10 +832,13 @@
         body: JSON.stringify(payload),
       });
       toast("Created");
+      try { localStorage.removeItem(draftKey()); } catch(_) {}
+      if (saveState) saveState.textContent = "Saved";
     }
 
     await loadProducts();
-    closeEditor();
+    // stay in editor (route-based)
+    renderProductsTable();
   }
 
   async function bulkTogglePublish() {
@@ -694,6 +872,9 @@
     }
 
     toast("Updated");
+      try { localStorage.removeItem(draftKey()); } catch(_) {}
+      if (saveState) saveState.textContent = "Saved";
+      location.hash = `#products/${encodeURIComponent(String(state.editing.id))}`;
     state.selected.clear();
     await loadProducts();
   }
@@ -894,9 +1075,9 @@
       });
     }
 
-    if (filterAll) filterAll.addEventListener("click", () => { state.listStatus = "all"; setFilterActive(); renderProductsTable(); });
-    if (filterPublished) filterPublished.addEventListener("click", () => { state.listStatus = "published"; setFilterActive(); renderProductsTable(); });
-    if (filterDraft) filterDraft.addEventListener("click", () => { state.listStatus = "draft"; setFilterActive(); renderProductsTable(); });
+    if (filterAll) filterAll.addEventListener("click", () => { state.listStatus = "all"; state.page = 1; setFilterActive(); renderProductsTable(); });
+    if (filterPublished) filterPublished.addEventListener("click", () => { state.listStatus = "published"; state.page = 1; setFilterActive(); renderProductsTable(); });
+    if (filterDraft) filterDraft.addEventListener("click", () => { state.listStatus = "draft"; state.page = 1; setFilterActive(); renderProductsTable(); });
 
     if (selectAll && productsTbody) {
       selectAll.addEventListener("change", () => {
@@ -917,6 +1098,15 @@
 
     if (quickPublishBtn) quickPublishBtn.addEventListener("click", () => bulkTogglePublish().catch((e) => toast(e?.message || "Failed")));
     if (duplicateBtn) duplicateBtn.addEventListener("click", () => duplicateSelected().catch((e) => toast(e?.message || "Failed")));
+    if (pagePrev) pagePrev.addEventListener("click", () => { state.page = Math.max(1, state.page - 1); renderProductsTable(); });
+    if (pageNext) pageNext.addEventListener("click", () => { state.page = state.page + 1; renderProductsTable(); });
+    if (pageSize) pageSize.addEventListener("change", () => {
+      const n = Number(pageSize.value);
+      state.pageSize = Number.isFinite(n) && n > 0 ? n : 25;
+      state.page = 1;
+      renderProductsTable();
+    });
+
   }
 
   function wireImagesUX() {
@@ -1006,13 +1196,15 @@
     }
 
     if (refreshBtn) refreshBtn.addEventListener("click", loadProducts);
-    if (newProductBtn) newProductBtn.addEventListener("click", () => openEditor(null));
-    if (cancelEditBtn) cancelEditBtn.addEventListener("click", closeEditor);
+    if (newProductBtn) newProductBtn.addEventListener("click", () => { location.hash = "#products/new"; });
+    if (cancelEditBtn) cancelEditBtn.addEventListener("click", () => { location.hash = "#products"; });
     if (discardBtn) discardBtn.addEventListener("click", () => {
       if (!state.editing) return;
       // reset fields back to original snapshot
       openEditor({ ...state.editing });
       setDirty(false);
+      try { localStorage.removeItem(draftKey()); } catch(_) {}
+      if (saveState) saveState.textContent = "Discarded";
       toast("Discarded");
     });
 
