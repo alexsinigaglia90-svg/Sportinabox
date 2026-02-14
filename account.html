@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My account — Sport in a Box</title>
+  <meta name="description" content="Account, adressen en bestelhistorie." />
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./js/auth-client.js"></script>
+  <script defer src="./js/auth-ui.js"></script>
+  <script defer src="./js/account.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box home">Sport in a Box</a>
+      <nav class="nav">
+        <a class="nav__link" href="./index.html">Home</a>
+        <a class="nav__link" href="./cart.html">Cart <span id="cartBadge" class="badge" aria-hidden="true"></span></a>
+        <a class="nav__link nav__link--active" href="./account.html" data-auth-link>Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <section class="section-head">
+      <div>
+        <h1 class="section__title">My account</h1>
+        <p class="section__lead" id="welcomeLine">—</p>
+      </div>
+      <div class="section__meta">
+        <button class="btn" id="btnSignOut" type="button">Sign out</button>
+      </div>
+    </section>
+
+    <section class="account-grid">
+      <aside class="account-side card">
+        <button class="side-item is-active" data-tab="orders" type="button">Orders</button>
+        <button class="side-item" data-tab="profile" type="button">Profile</button>
+        <button class="side-item" data-tab="addresses" type="button">Addresses</button>
+      </aside>
+
+      <section class="account-main">
+        <div class="tab is-active" id="tab-orders">
+          <div class="card">
+            <div class="card__head">
+              <h2 class="card__title">Order history</h2>
+              <span class="hint subtle">Je ziet hier je recente orders.</span>
+            </div>
+            <div id="ordersList" class="orders"></div>
+            <div id="ordersEmpty" class="empty is-hidden">
+              <div class="empty-title">Nog geen orders</div>
+              <div class="empty-sub">Zodra je afrekent verschijnt je order hier.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab" id="tab-profile">
+          <form class="card" id="profileForm">
+            <div class="card__head">
+              <h2 class="card__title">Profile</h2>
+              <span class="hint subtle">Werk je gegevens bij.</span>
+            </div>
+
+            <div class="grid2">
+              <label class="field">
+                <span>Name</span>
+                <input class="input" name="name" type="text" autocomplete="name" />
+              </label>
+              <label class="field">
+                <span>Phone</span>
+                <input class="input" name="phone" type="tel" autocomplete="tel" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Email</span>
+              <input class="input" name="email" type="email" autocomplete="email" disabled />
+            </label>
+
+            <div class="row">
+              <button class="btn-primary" type="submit">Save</button>
+              <span class="hint" id="profileHint"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="tab" id="tab-addresses">
+          <div class="card">
+            <div class="card__head">
+              <h2 class="card__title">Addresses</h2>
+              <button class="btn" id="btnAddAddress" type="button">Add address</button>
+            </div>
+
+            <div id="addressList" class="addresses"></div>
+
+            <form id="addressForm" class="address-form is-hidden">
+              <div class="grid2">
+                <label class="field">
+                  <span>Label</span>
+                  <input class="input" name="label" type="text" placeholder="Home / Work" />
+                </label>
+                <label class="field">
+                  <span>Country</span>
+                  <input class="input" name="country" type="text" value="NL" />
+                </label>
+              </div>
+
+              <label class="field">
+                <span>Address line 1</span>
+                <input class="input" name="line1" type="text" required />
+              </label>
+              <label class="field">
+                <span>Address line 2</span>
+                <input class="input" name="line2" type="text" />
+              </label>
+
+              <div class="grid2">
+                <label class="field">
+                  <span>Postal code</span>
+                  <input class="input" name="postal" type="text" required />
+                </label>
+                <label class="field">
+                  <span>City</span>
+                  <input class="input" name="city" type="text" required />
+                </label>
+              </div>
+
+              <label class="check">
+                <input type="checkbox" name="is_default" />
+                <span>Set as default</span>
+              </label>
+
+              <div class="row">
+                <button class="btn-primary" type="submit">Save address</button>
+                <button class="btn" id="btnCancelAddress" type="button">Cancel</button>
+                <span class="hint" id="addressHint"></span>
+              </div>
+
+              <input type="hidden" name="id" />
+            </form>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© <span id="year"></span> Sport in a Box</span>
+    </div>
+  </footer>
+
+  <div id="globalToast" class="toast" aria-live="polite"></div>
+
+  <script defer src="./js/cart-badge.js"></script>
+  <script defer src="./app.js"></script>
+</body>
+</html>

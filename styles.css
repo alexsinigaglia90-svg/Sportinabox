@@ -1942,3 +1942,72 @@ body {
 .product-card:hover .product-card__img{
   transform: scale(1.04);
 }
+
+
+/* ---------- Account / Auth UI (minimal, matches existing design) ---------- */
+.auth-card{ padding:18px; max-width: 860px; margin: 0 auto; }
+.auth-tabs{ display:flex; gap:10px; margin-bottom:14px; }
+.chip{
+  padding:10px 12px; border-radius:999px; border:1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.7); cursor:pointer;
+}
+.chip.is-active{ border-color: rgba(0,0,0,.22); background: rgba(0,0,0,.06); }
+.auth-form.is-hidden{ display:none; }
+.field{ display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+.input{
+  padding:12px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.14);
+  background:#fff;
+}
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.row{ display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap; }
+.hint{ font-size: 13px; color: rgba(0,0,0,.62); }
+.hint.subtle{ color: rgba(0,0,0,.52); }
+.btn-primary{
+  padding:12px 14px; border-radius:12px; border:1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.92); color:#fff; cursor:pointer;
+}
+.btn{ padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.12); background: rgba(255,255,255,.8); cursor:pointer; }
+.btn.sm{ padding:8px 10px; border-radius:10px; font-size:13px; }
+.check{ display:flex; align-items:center; gap:10px; margin-top:10px; }
+.muted{ color: rgba(0,0,0,.55); }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.account-grid{ display:grid; grid-template-columns: 260px 1fr; gap:16px; align-items:start; }
+.account-side{ padding:12px; position: sticky; top: 16px; }
+.side-item{
+  width:100%; text-align:left; padding:10px 12px; border-radius:12px; border:1px solid transparent;
+  background: transparent; cursor:pointer;
+}
+.side-item:hover{ background: rgba(0,0,0,.04); }
+.side-item.is-active{ background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.08); }
+.account-main .tab{ display:none; }
+.account-main .tab.is-active{ display:block; }
+
+.card{ border:1px solid rgba(0,0,0,.10); border-radius:16px; background: rgba(255,255,255,.86); box-shadow: 0 12px 40px rgba(0,0,0,.06); }
+.card__head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:16px 16px 0; }
+.card__title{ margin:0; }
+.orders{ padding:16px; display:flex; flex-direction:column; gap:10px; }
+.order{ border:1px solid rgba(0,0,0,.08); border-radius:14px; padding:12px; background:#fff; }
+.order__top{ display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.order__body{ margin-top:8px; display:flex; justify-content:space-between; gap:12px; }
+.order__items{ color: rgba(0,0,0,.70); }
+.order__total{ font-weight:700; }
+
+.addresses{ padding:16px; display:flex; flex-direction:column; gap:10px; }
+.address{ border:1px solid rgba(0,0,0,.08); border-radius:14px; padding:12px; background:#fff; }
+.address__top{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.address__label{ font-weight:700; display:flex; align-items:center; gap:8px; }
+.address__actions{ display:flex; gap:8px; }
+.address__body{ margin-top:8px; color: rgba(0,0,0,.70); }
+
+.address-form{ margin: 0 16px 16px; padding: 12px; border:1px dashed rgba(0,0,0,.16); border-radius:14px; background: rgba(0,0,0,.02); }
+.address-form.is-hidden{ display:none; }
+
+.empty{ padding:16px; }
+.empty.is-hidden{ display:none; }
+
+@media (max-width: 900px){
+  .grid2{ grid-template-columns: 1fr; }
+  .account-grid{ grid-template-columns: 1fr; }
+  .account-side{ position: relative; top: 0; }
+}

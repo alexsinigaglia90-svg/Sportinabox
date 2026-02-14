@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Account — Sign in</title>
+  <meta name="description" content="Login of maak een account aan." />
+  <link rel="stylesheet" href="./styles.css" />
+  <script defer src="./js/auth-client.js"></script>
+  <script defer src="./js/auth-ui.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="brand" href="./index.html" aria-label="Sport in a Box home">Sport in a Box</a>
+      <nav class="nav">
+        <a class="nav__link" href="./index.html">Home</a>
+        <a class="nav__link" href="./cart.html">Cart <span id="cartBadge" class="badge" aria-hidden="true"></span></a>
+        <a class="nav__link nav__link--active" href="./login.html" data-auth-link>Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <section class="section-head">
+      <div>
+        <h1 class="section__title">Account</h1>
+        <p class="section__lead" id="authLead">Log in of maak een account aan.</p>
+      </div>
+    </section>
+
+    <section class="card auth-card">
+      <div class="auth-tabs">
+        <button class="chip is-active" id="tabLogin" type="button">Sign in</button>
+        <button class="chip" id="tabRegister" type="button">Create account</button>
+      </div>
+
+      <form id="formLogin" class="auth-form">
+        <div class="grid2">
+          <label class="field">
+            <span>Email</span>
+            <input class="input" type="email" name="email" autocomplete="email" required />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input class="input" type="password" name="password" autocomplete="current-password" required />
+          </label>
+        </div>
+        <div class="row">
+          <button class="btn-primary" type="submit">Sign in</button>
+          <span class="hint" id="loginHint"></span>
+        </div>
+      </form>
+
+      <form id="formRegister" class="auth-form is-hidden">
+        <div class="grid2">
+          <label class="field">
+            <span>Name</span>
+            <input class="input" type="text" name="name" autocomplete="name" />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input class="input" type="email" name="email" autocomplete="email" required />
+          </label>
+        </div>
+        <div class="grid2">
+          <label class="field">
+            <span>Password</span>
+            <input class="input" type="password" name="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <label class="field">
+            <span>Confirm password</span>
+            <input class="input" type="password" name="password2" autocomplete="new-password" minlength="8" required />
+          </label>
+        </div>
+
+        <div class="row">
+          <button class="btn-primary" type="submit">Create account</button>
+          <span class="hint" id="registerHint"></span>
+        </div>
+        <p class="hint subtle">Door een account te maken kun je je bestelhistorie bekijken en adresgegevens beheren.</p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© <span id="year"></span> Sport in a Box</span>
+    </div>
+  </footer>
+
+  <div id="globalToast" class="toast" aria-live="polite"></div>
+
+  <script defer src="./js/cart-badge.js"></script>
+  <script defer src="./app.js"></script>
+</body>
+</html>
