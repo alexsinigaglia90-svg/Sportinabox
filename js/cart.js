@@ -180,8 +180,50 @@
       toast("Cart cleared");
     });
 
-    btnCheckout?.addEventListener("click", () => {
-      toast("Checkout komt hierna");
+    btnCheckout?.addEventListener("click", async () => {
+      try {
+        // require login
+        const me = await window.SIB_AUTH.getMe();
+        const cart = readCart();
+        if (!cart.items.length) return;
+
+        // choose default address if exists
+        const addrData = await window.SIB_AUTH.listAddresses().catch(() => ({ addresses: [] }));
+        const addresses = addrData.addresses || [];
+        const def = addresses.find(a => a.is_default) || addresses[0];
+        if (!def) {
+          toast("Voeg eerst een adres toe in je account");
+          location.href = "./account.html#addresses";
+          return;
+        }
+
+        const subtotal = cart.items.reduce((s, it) => s + (Number(it.price_cents)||0) * (Number(it.qty)||0), 0);
+        const shipping = 0;
+        const payload = {
+          currency: "EUR",
+          items: cart.items.map(it => ({
+            product_id: it.id,
+            title: it.name,
+            price_cents: Number(it.price_cents)||0,
+            qty: Number(it.qty)||0,
+            image_url: it.image || ""
+          })),
+          totals: { subtotal_cents: subtotal, shipping_cents: shipping, total_cents: subtotal + shipping },
+          shipping_address_id: def.id
+        };
+
+        await window.SIB_AUTH.createOrder(payload);
+        localStorage.removeItem(CART_KEY);
+        toast("Order geplaatst");
+        location.href = "./account.html";
+      } catch (err) {
+        if (err && err.status === 401) {
+          const returnTo = encodeURIComponent("./cart.html");
+          location.href = `./login.html?returnTo=${returnTo}`;
+          return;
+        }
+        toast(err.message || "Checkout failed");
+      }
     });
   }
 
