@@ -429,6 +429,9 @@ function safeJsonParse(text, fallback) {
   function setRoute(hash) {
     const h = (hash || "#products").toLowerCase();
 
+    // Normalize (strip query string)
+    const path = h.split("?")[0];
+
     const is = (prefix) => h === prefix || h.startsWith(prefix + "/") || h.startsWith(prefix + "?") || h.startsWith(prefix + "&") || h.startsWith(prefix);
 
     if (navHome) navHome.classList.toggle("is-active", is("#home"));
@@ -448,6 +451,34 @@ function safeJsonParse(text, fallback) {
     show(viewContent, is("#content"));
     show(viewAnalytics, is("#analytics"));
     show(viewSettings, is("#settings"));
+
+    // Products sub-routes: list vs editor (Shopify-style)
+    if (is("#products")) {
+      const isNew = path === "#products/new";
+      const isEdit = path.startsWith("#products/") && !isNew;
+
+      // toggle list vs editor panels
+      if (productsListPanel) {
+        productsListPanel.classList.toggle("state--hidden", isNew || isEdit);
+      }
+
+      if (isNew) {
+        openEditor(null);
+      } else if (isEdit) {
+        const rawId = path.split("/")[1];
+        const id = decodeURIComponent(rawId || "");
+        const p = state.products.find((x) => String(x.id) === String(id));
+        if (p) openEditor({ ...p });
+        else {
+          // If the product isn't loaded (yet), fall back to list and reload.
+          closeEditor();
+          if (productsListPanel) productsListPanel.classList.remove("state--hidden");
+          if (token()) loadProducts().catch(() => {});
+        }
+      } else {
+        closeEditor();
+      }
+    }
   }
 
   
