@@ -51,6 +51,8 @@
   const editorSub = $("editorSub");
   const cancelEditBtn = $("cancelEditBtn");
   const saveBtn = $("saveBtn");
+  const discardBtn = $("discardBtn");
+  const unsavedBadge = $("unsavedBadge");
 
   const formErrors = $("formErrors");
   const slugError = $("slugError");
@@ -73,6 +75,12 @@
   const fHighlights = $("fHighlights");
   const fSpecsJson = $("fSpecsJson");
   const fStatus = $("fStatus");
+  const fVendor = $("fVendor");
+  const fType = $("fType");
+  const fCollections = $("fCollections");
+  const fTags = $("fTags");
+  const fTrackQty = $("fTrackQty");
+  const fQuantity = $("fQuantity");
 
   // Images
   const fImageFiles = $("fImageFiles");
@@ -101,6 +109,8 @@
     listStatus: "all", // all | published | draft
     selected: new Set(),
     pendingImageFiles: [],
+    dirty: false,
+    originalPayload: null,
   };
 
   function token() {
@@ -118,6 +128,32 @@
     globalToast.classList.add("is-visible");
     clearTimeout(toast._t);
     toast._t = setTimeout(() => globalToast.classList.remove("is-visible"), 1400);
+  }
+
+  function setDirty(yes) {
+    state.dirty = !!yes;
+    if (unsavedBadge) show(unsavedBadge, state.dirty);
+    if (saveBtn) saveBtn.disabled = !state.dirty;
+  }
+
+  function snapshotPayload() {
+    try { return JSON.stringify(collectEditorPayload()); } catch { return null; }
+  }
+
+  function bindDirtyTracking() {
+    const els = [fName,fSlug,fCategory,fCurrency,fPrice,fDescription,fHighlights,fSpecsJson,fStatus,fVendor,fType,fCollections,fTags,fTrackQty,fQuantity];
+    for (const el of els) {
+      if (!el) continue;
+      const ev = (el.type === "checkbox" || el.tagName === "SELECT") ? "change" : "input";
+      el.addEventListener(ev, () => {
+        if (el === fTrackQty && fQuantity) { fQuantity.disabled = !fTrackQty.checked; }
+        const now = snapshotPayload();
+        if (state.originalPayload == null) { setDirty(true); }
+        else if (now != null) { setDirty(now !== state.originalPayload); }
+        else { setDirty(false); }
+        updatePreview();
+      });
+    }
   }
 
   function setFormError(msg) {
@@ -410,8 +446,22 @@
     if (fDescription) fDescription.value = p.description || "";
 
     const specs = safeJsonParse(p.specs_json, {});
-    const hl = Array.isArray(specs.highlights) ? specs.highlights.join("\n") : "";
+    const hl = Array.isArray(specs.highlights) ? specs.highlights.join("
+") : "";
     if (fHighlights) fHighlights.value = hl;
+
+    // Sidebar organization fields (stored in specs)
+    if (fVendor) fVendor.value = specs.vendor || "";
+    if (fType) fType.value = specs.product_type || "";
+    if (fCollections) fCollections.value = Array.isArray(specs.collections) ? specs.collections.join(", ") : (specs.collections || "");
+    if (fTags) fTags.value = Array.isArray(specs.tags) ? specs.tags.join(", ") : (specs.tags || "");
+
+    // Inventory (stored in specs)
+    const inv = (specs && typeof specs.inventory === "object") ? specs.inventory : {};
+    const track = !!inv.track_quantity;
+    const qty = Number.isFinite(Number(inv.quantity)) ? Number(inv.quantity) : 0;
+    if (fTrackQty) fTrackQty.checked = track;
+    if (fQuantity) { fQuantity.value = String(qty); fQuantity.disabled = !track; }
 
     // Specs editor: laat de specs zo “mooi” mogelijk zien
     if (fSpecsJson) fSpecsJson.value = JSON.stringify(specs || {}, null, 2);
@@ -428,6 +478,9 @@
     setFormError("");
     updateSlugValidation();
     updatePreview();
+
+    state.originalPayload = snapshotPayload();
+    setDirty(false);
 
     setActiveTab("core");
   }
@@ -509,6 +562,35 @@
       .filter(Boolean);
 
     const specsObj = { ...(v.obj || {}) };
+
+    // Shopify-like organization fields (stored inside specs to keep API stable)
+    const vendor = (fVendor?.value || "").trim();
+    const ptype = (fType?.value || "").trim();
+    const collections = (fCollections?.value || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const tags = (fTags?.value || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (vendor) specsObj.vendor = vendor;
+    else delete specsObj.vendor;
+
+    if (ptype) specsObj.product_type = ptype;
+    else delete specsObj.product_type;
+
+    if (collections.length) specsObj.collections = collections;
+    else delete specsObj.collections;
+
+    if (tags.length) specsObj.tags = tags;
+    else delete specsObj.tags;
+
+    // Inventory (stored inside specs)
+    const track = !!(fTrackQty?.checked);
+    const qty = Math.max(0, Number(fQuantity?.value || 0));
+    specsObj.inventory = { track_quantity: track, quantity: Number.isFinite(qty) ? qty : 0 };
     if (highlights.length) specsObj.highlights = highlights;
     else delete specsObj.highlights;
 
@@ -878,6 +960,7 @@
     wireCoreUX();
     wireProductsToolbar();
     wireImagesUX();
+    bindDirtyTracking();
 
     if (loginBtn) {
       loginBtn.addEventListener("click", async () => {
@@ -904,6 +987,13 @@
     if (refreshBtn) refreshBtn.addEventListener("click", loadProducts);
     if (newProductBtn) newProductBtn.addEventListener("click", () => openEditor(null));
     if (cancelEditBtn) cancelEditBtn.addEventListener("click", closeEditor);
+    if (discardBtn) discardBtn.addEventListener("click", () => {
+      if (!state.editing) return;
+      // reset fields back to original snapshot
+      openEditor({ ...state.editing });
+      setDirty(false);
+      toast("Discarded");
+    });
 
     if (saveBtn) {
       saveBtn.addEventListener("click", async () => {
